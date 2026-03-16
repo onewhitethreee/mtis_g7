@@ -1,0 +1,873 @@
+openapi: '3.0.3'
+info:
+  title: MTIS Prática Grupal
+  version: '0.2'
+
+paths:
+
+  # SERVICIO CIUDADANOS
+  /ciudadanos:
+    post:
+      tags:
+        - ciudadanos
+      summary: Registrar a un nuevo ciudadano
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ciudadano'
+      responses:
+        '200':
+          description: Se ha creado correctamente
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - ciudadanos
+      summary: Consultar la lista de ciudadanos registrados
+      parameters:
+        - name: p
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: s
+          in: query
+          description: Número de entradas por página
+          schema:
+            type: integer
+            default: 10
+            maximum: 30
+        - name: q
+          in: query
+          description: Tipo de orden para la fecha de creación
+          schema:
+            type: string
+            enum: [ascendente, descendente]
+            default: descendente
+        - name: search
+          in: query
+          description: Filtrar por nombre o correo
+          schema:
+            type: string
+      responses:
+        '200':
+          description: La consulta se ha realizado correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ciudadano"
+        '500':
+          description: Error interno del servidor
+  /ciudadanos/{id}:
+    delete:
+      tags:
+        - ciudadanos
+      summary: Borrar un ciudadano a partir de su NIF o NIE
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: NIF o NIE del ciudadano
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha borrado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    put:
+      tags:
+        - ciudadanos
+      summary: Modificar los datos de un ciudadano
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: NIF o NIE del ciudadano
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Ciudadano'
+      responses:
+        '200':
+          description: El ciudadano se ha modificado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - ciudadanos
+      summary: Consultar datos de un ciudadano a partir de su NIF o NIE
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: NIF o NIE del ciudadano
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha encontrado la entrada en base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ciudadano'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO ELEGIBILIDAD
+  /elegible/{oferta}/{ciudadano}:
+    get:
+      tags:
+        - elegibilidad
+      summary: Comprobar si un ciudadano es elegible para una oferta
+      parameters:
+        - name: oferta
+          in: path
+          required: true
+          description: Código de la oferta
+          schema:
+            type: string
+        - name: ciudadano
+          in: path
+          required: true
+          description: NIF o NIE del ciudadano
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha podido verificar la elegibilidad
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - elegible
+                properties:
+                  elegible:
+                    type: boolean
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' 
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO OFERTAS
+  /ofertas:
+    post:
+      tags:
+        - ofertas
+      summary: Registrar una nueva oferta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Oferta'
+      responses:
+        '200':
+          description: Se ha creado correctamente
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - ofertas
+      summary: Consultar la lista de ofertas registradas
+      parameters:
+        - name: p
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: s
+          in: query
+          description: Número de entradas por página
+          schema:
+            type: integer
+            default: 10
+            maximum: 30
+        - name: q
+          in: query
+          description: Tipo de orden para la fecha de creación
+          schema:
+            type: string
+            enum: [ascendente, descendente]
+            default: descendente
+        - name: search
+          in: query
+          description: Filtrar por nombre de la empresa
+          schema:
+            type: string
+      responses:
+        '200':
+          description: La consulta se ha realizado correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Oferta"
+        '500':
+          description: Error interno del servidor
+  /ofertas/{id}:
+    delete:
+      tags:
+        - ofertas
+      summary: Borrar una oferta a partir de su código
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código de la oferta
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha borrado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    put:
+      tags:
+        - ofertas
+      summary: Modificar los datos de una empresa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código de la oferta
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Oferta'
+      responses:
+        '200':
+          description: La oferta se ha modificado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - ofertas
+      summary: Consultar datos de una oferta a partir de su código
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código de la oferta
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha encontrado la entrada en base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO EMPRESAS
+  /empresas:
+    post:
+      tags:
+        - empresas
+      summary: Registrar una nueva empresa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Empresa'
+      responses:
+        '200':
+          description: Se ha creado correctamente
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - empresas
+      summary: Consultar la lista de empresas registradas
+      parameters:
+        - name: p
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: s
+          in: query
+          description: Número de entradas por página
+          schema:
+            type: integer
+            default: 10
+            maximum: 30
+        - name: q
+          in: query
+          description: Tipo de orden para la fecha de creación
+          schema:
+            type: string
+            enum: [ascendente, descendente]
+            default: descendente
+        - name: search
+          in: query
+          description: Filtrar por el nombre de la empresa
+          schema:
+            type: string
+      responses:
+        '200':
+          description: La consulta se ha realizado correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Empresa"
+        '500':
+          description: Error interno del servidor
+  /empresas/{id}:
+    delete:
+      tags:
+        - empresas
+      summary: Borrar una empresa a partir de su CIF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: CIF de la empresa
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha borrado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    put:
+      tags:
+        - empresas
+      summary: Modificar los datos de una empresa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: CIF de la empresa
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Empresa'
+      responses:
+        '200':
+          description: La empresa se ha modificado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - empresas
+      summary: Consultar datos de una empresa a partir de su CIF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: CIF de la empresa
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha encontrado la entrada en base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Empresa'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO CURSOS
+  /cursos:
+    post:
+      tags:
+        - cursos
+      summary: Registrar un nuevo curso
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Curso'
+      responses:
+        '200':
+          description: Se ha creado correctamente
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - cursos
+      summary: Consultar la lista de cursos registrados
+      parameters:
+        - name: p
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: s
+          in: query
+          description: Número de entradas por página
+          schema:
+            type: integer
+            default: 10
+            maximum: 30
+        - name: q
+          in: query
+          description: Tipo de orden para la fecha de creación
+          schema:
+            type: string
+            enum: [ascendente, descendente]
+            default: descendente
+        - name: search
+          in: query
+          description: Filtrar por el nombre del curso
+          schema:
+            type: string
+      responses:
+        '200':
+          description: La consulta se ha realizado correctamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Curso"
+        '500':
+          description: Error interno del servidor
+  /cursos/{id}:
+    delete:
+      tags:
+        - cursos
+      summary: Borrar un curso a partir de su código
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código del curso
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha borrado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    put:
+      tags:
+        - cursos
+      summary: Modificar los datos de un curso
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código del curso
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Curso'
+      responses:
+        '200':
+          description: El curso se ha modificado correctamente
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+    get:
+      tags:
+        - cursos
+      summary: Consultar datos de un curso a partir de su código
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Código del curso
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha encontrado la entrada en base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO INSCRIPCIONES
+  /inscribir/{curso}/{ciudadano}:
+    post:
+      tags:
+        - inscripciones
+      summary: Inscribir a un ciudadano en un curso
+      parameters:
+        - name: curso
+          in: path
+          required: true
+          description: Código del curso
+          schema:
+            type: string
+        - name: ciudadano
+          in: path
+          required: true
+          description: NIF o NIE del ciudadano
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Se ha inscrito al ciudadano correctamente
+        '400':
+          description: El ciudadano no es elegible para el curso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+  # SERVICIO NOTIFICACIOENS
+  /notificar:
+    post:
+      tags:
+        - notificaciones
+      summary: Enviar una notificacion a un usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Notificacion"
+      responses:
+        '200':
+          description: Se ha enviado la notificación
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No existe tal entrada en la base de datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+
+components:
+  schemas:
+
+    Error:
+      type: object
+      required:
+        - mensaje
+      properties:
+        mensaje:
+          type: string
+
+    Ciudadano:
+      type: object
+      required:
+        - nif_nie
+        - nombre_apellidos
+        - correo
+        - telefono
+        - genero
+        - nacionalidad
+        - fecha_nacimiento
+        - certificados
+        - activo
+      properties:
+        nif_nie:
+          type: string
+        nombre_apellidos:
+          type: string
+        correo:
+          type: string
+        telefono:
+          type: string
+        genero:
+          type: string
+          enum: ["M", "F"]
+        nacionalidad:
+          type: string
+        fecha_nacimiento:
+          type: string
+          format: date
+        certificados:
+          type: array
+          items:
+            $ref: "#/components/schemas/Certificado"
+        activo:
+          type: boolean
+
+    Empresa:
+      type: object
+      required:
+        - cif
+        - nombre
+        - razon_social
+        - correo
+        - telefono
+        - fecha_constitucion
+        - sector
+        - clasificacion
+      properties:
+        cif:
+          type: string
+        nombre:
+          type: string
+        razon_social:
+          type: string
+        correo:
+          type: string
+        telefono:
+          type: string
+        fecha_constitucion:
+          type: string
+          format: date
+        sector:
+          type: string
+        clasificacion:
+          type: string
+          # Esta es la clasificación española
+          enum: ["MICRO", "PEQUEÑA", "MEDIANA", "GRANDE"]
+
+    Oferta:
+      type: object
+      required:
+        - cif_empresa
+        - titulo
+        - descripcion
+        - fecha_caducidad
+        - modalidad_contrato
+        - salario
+      properties:
+        codigo:
+          type: string
+        cif_empresa:
+          type: string
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        fecha_caducidad:
+          type: string
+          format: date
+        modalidad_contrato:
+          type: string
+          # Estos son los modelos de contrato en España, exceptuando el de pescadores
+          # https://sepe.es/HomeSepe/empresas/Contratos-de-trabajo/modelos-contrato.html
+          enum: ["INDEFINIDO", "TEMPORAL", "ALTERNANCIA", "PRÁCTICAS"]
+        salario:
+          # No es un número porque igual queremos poner un salario fijo, un rango, o algo distinto
+          type: string
+
+    Curso:
+      type: object
+      required:
+        - titulo
+        - descripcion
+        - plazas
+        - alumnos
+        - fecha_inicio
+        - fecha_fin
+      properties:
+        codigo:
+          type: string
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        plazas:
+          type: integer
+        alumnos:
+          type: array
+          items:
+            type: object
+            required:
+              - nif_nie
+              - aprobado
+            properties:
+              nif_nie:
+                type: string
+              aprobado:
+                type: boolean
+        fecha_inicio:
+          type: string
+          format: date
+        fecha_fin:
+          type: string
+          format: date
+
+    Certificado:
+      type: object
+      required:
+        - nif_nie
+        - titulo
+        - descripcion
+        - codigo_curso
+        - fecha_emision
+      properties:
+        codigo:
+          type: string
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        nif_nie:
+          type: string
+        codigo_curso:
+          type: string
+        fecha_emision:
+          type: string
+          format: date
+
+    Notificacion:
+      type: object
+      required:
+        - nif_nie
+        - titulo
+        - cuerpo
+        - medio
+      properties:
+        nif_nie:
+          type: string
+        titulo:
+          type: string
+        cuerpo:
+          type: string
+        medio:
+          type: string
+          enum: ["CORREO", "SMS"]

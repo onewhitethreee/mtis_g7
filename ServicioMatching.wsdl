@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.example.org/ServicioMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServicioMatching" targetNamespace="http://www.example.org/ServicioMatching/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.example.org/ServicioMatching/">
+      <xsd:element name="ObtenerMejoresCandidatos">
+        <xsd:complexType>
+          <xsd:sequence>
+          	<xsd:element name="codigo_oferta" type="xsd:string" />
+
+          	<xsd:element name="numero_candidatos"
+          		type="xsd:integer">
+          	</xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ObtenerMejoresCandidatosResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+          	<xsd:element name="candidatos" type="tns:Ciudadano"
+          		maxOccurs="unbounded" minOccurs="0" />
+          	<xsd:element name="ok" type="xsd:boolean"></xsd:element>
+          	<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+    
+      <xsd:complexType name="Ciudadano">
+      	<xsd:sequence>
+      		<xsd:element name="nif_nie" type="xsd:string"></xsd:element>
+      		<xsd:element name="nombre_apellidos" type="xsd:string"></xsd:element>
+      		<xsd:element name="correo" type="xsd:string"></xsd:element>
+      		<xsd:element name="telefono" type="xsd:string"></xsd:element>
+      		<xsd:element name="genero" type="xsd:string"></xsd:element>
+      		<xsd:element name="nacionalidad" type="xsd:string"></xsd:element>
+      		<xsd:element name="fecha_nacimiento" type="xsd:string"></xsd:element>
+      		<xsd:element name="afinidad" type="xsd:float"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ObtenerMejoresCandidatosRequest">
+    <wsdl:part element="tns:ObtenerMejoresCandidatos" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ObtenerMejoresCandidatosResponse">
+    <wsdl:part element="tns:ObtenerMejoresCandidatosResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:portType name="ServicioMatching">
+    <wsdl:operation name="ObtenerMejoresCandidatos">
+      <wsdl:input message="tns:ObtenerMejoresCandidatosRequest"/>
+      <wsdl:output message="tns:ObtenerMejoresCandidatosResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServicioMatchingSOAP" type="tns:ServicioMatching">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="ObtenerMejoresCandidatos">
+      <soap:operation soapAction="http://www.example.org/ServicioMatching/ObtenerMejoresCandidatos"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServicioMatching">
+    <wsdl:port binding="tns:ServicioMatchingSOAP" name="ServicioMatchingSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
