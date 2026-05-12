@@ -1,0 +1,128 @@
+openapi: 3.0.0
+info:
+  title: API Profesional LABORA - Gestión Integral de Empleo y Formación
+  description: >
+    Contrato unificado con capacidades CRUD completas para servicios de entidad, 
+    aplicación y proceso. Diseñado para la entrega oficial del proyecto MTIS.
+  version: 1.0.0
+
+tags:
+  - name: ServicioDemandantes (Entidad)
+    description: Operaciones completas sobre el censo de ciudadanos demandantes.
+  - name: ServicioCursos (Entidad)
+    description: Gestión del catálogo de formación y oferta académica.
+  - name: ServicioCertificados (Entidad)
+    description: Registro y validación de titulaciones y competencias.
+  - name: ServicioInscripciones (Proceso)
+    description: Orquestación y seguimiento de solicitudes de formación.
+  - name: ServicioNotificaciones (Aplicación)
+    description: Infraestructura técnica de comunicaciones.
+
+paths:
+  # --- SERVICIO DE DEMANDANTES ---
+  /demandantes:
+    post:
+      tags: [ServicioDemandantes (Entidad)]
+      summary: Registrar nuevo demandante de empleo
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Demandante' }
+      responses:
+        '201': { description: Demandante creado }
+  /demandantes/{dni}:
+    get:
+      tags: [ServicioDemandantes (Entidad)]
+      summary: Consultar perfil completo
+      parameters: [{ name: dni, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Datos del perfil }
+    put:
+      tags: [ServicioDemandantes (Entidad)]
+      summary: Actualizar datos o estado laboral
+      responses:
+        '200': { description: Perfil actualizado }
+    delete:
+      tags: [ServicioDemandantes (Entidad)]
+      summary: Dar de baja al demandante
+      responses:
+        '204': { description: Registro eliminado }
+
+  # --- SERVICIO DE CURSOS ---
+  /cursos:
+    get:
+      tags: [ServicioCursos (Entidad)]
+      summary: Listar catálogo de formación disponible
+      responses:
+        '200': { description: Lista de cursos }
+    post:
+      tags: [ServicioCursos (Entidad)]
+      summary: Publicar nuevo curso de formación
+      responses:
+        '211': { description: Curso publicado }
+  /cursos/{id}:
+    get:
+      tags: [ServicioCursos (Entidad)]
+      summary: Ver detalles y requisitos técnicos
+      responses:
+        '200': { description: Detalle del curso }
+    put:
+      tags: [ServicioCursos (Entidad)]
+      summary: Modificar plazas o requisitos
+      responses:
+        '200': { description: Curso modificado }
+
+  # --- SERVICIO DE CERTIFICADOS (AMPLIADO) ---
+  /certificados:
+    post:
+      tags: [ServicioCertificados (Entidad)]
+      summary: Registrar nuevo certificado u homologación
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Certificado' }
+      responses:
+        '201': { description: Certificado registrado }
+  /certificados/{dni}:
+    get:
+      tags: [ServicioCertificados (Entidad)]
+      summary: Listar todos los certificados validados de un ciudadano
+      parameters: [{ name: dni, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: Colección de certificados }
+  /certificados/{id}:
+    delete:
+      tags: [ServicioCertificados (Entidad)]
+      summary: Revocar o eliminar un certificado erróneo
+      responses:
+        '204': { description: Certificado revocado }
+
+  # --- SERVICIO DE INSCRIPCIONES (PROCESO) ---
+  /inscripciones:
+    post:
+      tags: [ServicioInscripciones (Proceso)]
+      summary: Iniciar orquestación de inscripción (Composición)
+      description: Inicia el flujo que consulta Demandantes, Cursos y Certificados [2, 3].
+      responses:
+        '201': { description: Proceso de validación iniciado }
+  /inscripciones/{id}:
+    get:
+      tags: [ServicioInscripciones (Proceso)]
+      summary: Consultar estado de una solicitud enviada
+      responses:
+        '200': { description: Estado de la solicitud }
+
+components:
+  schemas:
+    Demandante:
+      type: object
+      properties:
+        dni: { type: string }
+        nombre: { type: string }
+        nivelAcademico: { type: integer }
+    Certificado:
+      type: object
+      properties:
+        id: { type: string }
+        dniTitular: { type: string }
+        descripcion: { type: string }
