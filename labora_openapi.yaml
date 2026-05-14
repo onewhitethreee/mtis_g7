@@ -1,0 +1,987 @@
+openapi: '3.0.3'
+info:
+  title: LABORA - API de Integración
+  version: '1.0'
+  description: >
+    Contrato REST unificado del sistema LABORA (Servicio Público de Empleo de la Comunitat Valenciana).
+    Incluye la gestión de usuarios, empresas, ofertas de trabajo, cursos de formación y notificaciones.
+
+tags:
+  - name: usuarios
+    description: Gestión de usuarios demandantes de empleo
+  - name: empresas
+    description: Gestión de empresas registradas en el sistema
+  - name: ofertas
+    description: Gestión de ofertas de trabajo publicadas por empresas
+  - name: cursos
+    description: Gestión de cursos de formación de la plataforma LABORA
+  - name: notificaciones
+    description: Envío y consulta de notificaciones a usuarios y empresas
+
+paths:
+
+  # ─────────────────────────────────────────
+  # USUARIOS
+  # ─────────────────────────────────────────
+
+  /usuarios:
+    post:
+      tags:
+        - usuarios
+      summary: Crear un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '201':
+          description: Usuario creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Ya existe un usuario con ese NIF/NIE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - usuarios
+      summary: Listar usuarios con filtros opcionales
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - $ref: '#/components/parameters/Orden'
+        - name: search
+          in: query
+          description: Filtrar por nombre, apellidos o email
+          schema:
+            type: string
+        - name: tipo
+          in: query
+          description: Filtrar por tipo de usuario
+          schema:
+            type: string
+            enum: [DEMANDANTE, REPRESENTANTE, ADMINISTRADOR]
+        - name: activo
+          in: query
+          description: Filtrar por estado activo/inactivo
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Listado de usuarios obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /usuarios/{id}:
+    get:
+      tags:
+        - usuarios
+      summary: Obtener un usuario por su NIF/NIE
+      parameters:
+        - $ref: '#/components/parameters/IdNIFNIE'
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - usuarios
+      summary: Modificar los datos de un usuario
+      parameters:
+        - $ref: '#/components/parameters/IdNIFNIE'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioInput'
+      responses:
+        '200':
+          description: Usuario modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - usuarios
+      summary: Eliminar un usuario por su NIF/NIE
+      parameters:
+        - $ref: '#/components/parameters/IdNIFNIE'
+      responses:
+        '200':
+          description: Usuario eliminado correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─────────────────────────────────────────
+  # EMPRESAS
+  # ─────────────────────────────────────────
+
+  /empresas:
+    post:
+      tags:
+        - empresas
+      summary: Crear una nueva empresa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpresaInput'
+      responses:
+        '201':
+          description: Empresa creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Empresa'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Ya existe una empresa con ese CIF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - empresas
+      summary: Listar empresas con filtros opcionales
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - $ref: '#/components/parameters/Orden'
+        - name: search
+          in: query
+          description: Filtrar por nombre o razón social
+          schema:
+            type: string
+        - name: sector
+          in: query
+          description: Filtrar por sector de actividad
+          schema:
+            type: string
+        - name: clasificacion
+          in: query
+          description: Filtrar por clasificación de empresa
+          schema:
+            type: string
+            enum: [MICRO, PEQUEÑA, MEDIANA, GRANDE]
+      responses:
+        '200':
+          description: Listado de empresas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpresaListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /empresas/{cif}:
+    get:
+      tags:
+        - empresas
+      summary: Obtener una empresa por su CIF
+      parameters:
+        - $ref: '#/components/parameters/IdCIF'
+      responses:
+        '200':
+          description: Empresa encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Empresa'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - empresas
+      summary: Modificar los datos de una empresa
+      parameters:
+        - $ref: '#/components/parameters/IdCIF'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpresaInput'
+      responses:
+        '200':
+          description: Empresa modificada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Empresa'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - empresas
+      summary: Eliminar una empresa por su CIF
+      parameters:
+        - $ref: '#/components/parameters/IdCIF'
+      responses:
+        '200':
+          description: Empresa eliminada correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─────────────────────────────────────────
+  # OFERTAS
+  # ─────────────────────────────────────────
+
+  /ofertas:
+    post:
+      tags:
+        - ofertas
+      summary: Crear una nueva oferta de trabajo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfertaInput'
+      responses:
+        '201':
+          description: Oferta creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No existe ninguna empresa con ese CIF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - ofertas
+      summary: Listar ofertas filtradas por etiquetas y otros criterios
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - $ref: '#/components/parameters/Orden'
+        - name: search
+          in: query
+          description: Filtrar por título o descripción
+          schema:
+            type: string
+        - name: etiquetas
+          in: query
+          description: Filtrar por etiquetas separadas por comas
+          schema:
+            type: string
+            example: "informatica,programacion"
+        - name: estado
+          in: query
+          description: Filtrar por estado de la oferta
+          schema:
+            type: string
+            enum: [ACTIVA, CERRADA, PAUSADA]
+        - name: cif_empresa
+          in: query
+          description: Filtrar por empresa publicadora
+          schema:
+            type: string
+            example: "B12345678"
+        - name: duracion_contrato
+          in: query
+          description: Filtrar por tipo de contrato
+          schema:
+            type: string
+            enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+      responses:
+        '200':
+          description: Listado de ofertas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfertaListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ofertas/{id}:
+    get:
+      tags:
+        - ofertas
+      summary: Obtener una oferta por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdOferta'
+      responses:
+        '200':
+          description: Oferta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - ofertas
+      summary: Modificar los datos de una oferta
+      parameters:
+        - $ref: '#/components/parameters/IdOferta'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfertaInput'
+      responses:
+        '200':
+          description: Oferta modificada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - ofertas
+      summary: Eliminar una oferta por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdOferta'
+      responses:
+        '200':
+          description: Oferta eliminada correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─────────────────────────────────────────
+  # CURSOS
+  # ─────────────────────────────────────────
+
+  /cursos:
+    post:
+      tags:
+        - cursos
+      summary: Crear un nuevo curso de formación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoInput'
+            example:
+              titulo: "Introducción a la programación"
+              descripcion: "Curso básico de programación orientado a desempleados"
+              fecha_inicio: "2026-05-14"
+              fecha_fin: "2026-12-31"
+              etiquetas: ["informatica", "programacion"]
+      responses:
+        '201':
+          description: Curso creado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - cursos
+      summary: Listar cursos con filtros opcionales
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - name: estado
+          in: query
+          description: Filtrar por estado del curso
+          schema:
+            type: string
+            enum: [activo, inactivo, finalizado]
+        - name: etiqueta
+          in: query
+          description: Filtrar por etiqueta asociada al curso
+          schema:
+            type: string
+            example: "informatica"
+      responses:
+        '200':
+          description: Listado de cursos obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CursoListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /cursos/{id}:
+    get:
+      tags:
+        - cursos
+      summary: Obtener un curso por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdCurso'
+      responses:
+        '200':
+          description: Curso encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - cursos
+      summary: Modificar los datos de un curso
+      parameters:
+        - $ref: '#/components/parameters/IdCurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CursoInput'
+      responses:
+        '200':
+          description: Curso modificado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Curso'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - cursos
+      summary: Eliminar un curso por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdCurso'
+      responses:
+        '204':
+          description: Curso eliminado correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─────────────────────────────────────────
+  # NOTIFICACIONES
+  # ─────────────────────────────────────────
+
+  /notificaciones:
+    post:
+      tags:
+        - notificaciones
+      summary: Enviar una nueva notificación
+      description: Envía una notificación a una lista de correos electrónicos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificacionInput'
+      responses:
+        '201':
+          description: Notificación procesada y encolada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notificacion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /notificaciones/{id}:
+    get:
+      tags:
+        - notificaciones
+      summary: Obtener el estado de una notificación por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdNotificacion'
+      responses:
+        '200':
+          description: Estado de la notificación obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notificacion'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+# ─────────────────────────────────────────
+# COMPONENTES REUTILIZABLES
+# ─────────────────────────────────────────
+
+components:
+
+  # ── PARÁMETROS REUTILIZABLES ──────────────
+
+  parameters:
+
+    Pagina:
+      name: p
+      in: query
+      description: Número de página
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    TamanoPagina:
+      name: s
+      in: query
+      description: Número de entradas por página
+      schema:
+        type: integer
+        default: 10
+        maximum: 50
+
+    Orden:
+      name: q
+      in: query
+      description: Orden de los resultados por fecha
+      schema:
+        type: string
+        enum: [ascendente, descendente]
+        default: descendente
+
+    IdNIFNIE:
+      name: id
+      in: path
+      required: true
+      description: NIF o NIE del usuario
+      schema:
+        type: string
+        example: "12345678A"
+
+    IdCIF:
+      name: cif
+      in: path
+      required: true
+      description: CIF de la empresa
+      schema:
+        type: string
+        example: "B12345678"
+
+    IdOferta:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la oferta
+      schema:
+        type: string
+        example: "OFE-2026-001"
+
+    IdCurso:
+      name: id
+      in: path
+      required: true
+      description: Identificador único del curso
+      schema:
+        type: integer
+        example: 1
+
+    IdNotificacion:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la notificación
+      schema:
+        type: integer
+        example: 10458
+
+  # ── RESPUESTAS REUTILIZABLES ──────────────
+
+  responses:
+
+    BadRequest:
+      description: Los datos introducidos son incorrectos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            mensaje: "Los datos introducidos son incorrectos"
+
+    NotFound:
+      description: El recurso solicitado no existe
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            mensaje: "El recurso solicitado no existe"
+
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            mensaje: "Error interno del servidor"
+
+  # ── SCHEMAS ───────────────────────────────
+
+  schemas:
+
+    Error:
+      type: object
+      required:
+        - mensaje
+      properties:
+        mensaje:
+          type: string
+          example: "Descripción del error ocurrido"
+
+    # ── USUARIOS ──
+
+    UsuarioInput:
+      type: object
+      description: Datos necesarios para crear o modificar un usuario
+      required:
+        - id_nie
+        - nombre
+        - apellidos
+        - email
+        - tipo
+      properties:
+        id_nie:
+          type: string
+          description: NIF o NIE del usuario (identificador único)
+          example: "12345678A"
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "García López"
+        email:
+          type: string
+          format: email
+          example: "maria.garcia@email.com"
+        tipo:
+          type: string
+          enum: [DEMANDANTE, REPRESENTANTE, ADMINISTRADOR]
+          example: "DEMANDANTE"
+        activo:
+          type: boolean
+          default: true
+
+    Usuario:
+      allOf:
+        - $ref: '#/components/schemas/UsuarioInput'
+      description: Usuario completo tal como se almacena en el sistema
+
+    UsuarioListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 120
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Usuario'
+
+    # ── EMPRESAS ──
+
+    EmpresaInput:
+      type: object
+      description: Datos necesarios para crear o modificar una empresa
+      required:
+        - cif
+        - nombre
+        - razon_social
+        - correo
+        - telefono
+        - fecha_constitucion
+        - sector
+        - clasificacion
+      properties:
+        cif:
+          type: string
+          example: "B12345678"
+        nombre:
+          type: string
+          example: "TechSolutions SL"
+        razon_social:
+          type: string
+          example: "TechSolutions Sociedad Limitada"
+        correo:
+          type: string
+          format: email
+          example: "contacto@techsolutions.es"
+        telefono:
+          type: string
+          example: "965123456"
+        fecha_constitucion:
+          type: string
+          format: date
+          example: "2010-03-15"
+        sector:
+          type: string
+          example: "Tecnología"
+        clasificacion:
+          type: string
+          enum: [MICRO, PEQUEÑA, MEDIANA, GRANDE]
+          example: "PEQUEÑA"
+
+    Empresa:
+      allOf:
+        - $ref: '#/components/schemas/EmpresaInput'
+      description: Empresa completa tal como se almacena en el sistema
+
+    EmpresaListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 45
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Empresa'
+
+    # ── OFERTAS ──
+
+    OfertaInput:
+      type: object
+      description: Datos necesarios para crear o modificar una oferta de trabajo
+      required:
+        - cif_empresa
+        - titulo
+        - descripcion
+        - duracion_contrato
+        - estado
+        - etiquetas
+      properties:
+        cif_empresa:
+          type: string
+          example: "B12345678"
+        titulo:
+          type: string
+          example: "Desarrollador Full Stack"
+        descripcion:
+          type: string
+          example: "Buscamos desarrollador con experiencia en React y Node.js"
+        duracion_contrato:
+          type: string
+          enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+          example: "INDEFINIDO"
+        estado:
+          type: string
+          enum: [ACTIVA, CERRADA, PAUSADA]
+          default: ACTIVA
+          example: "ACTIVA"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion", "fullstack"]
+        fecha_publicacion:
+          type: string
+          format: date
+          example: "2026-05-14"
+
+    Oferta:
+      allOf:
+        - $ref: '#/components/schemas/OfertaInput'
+      description: Oferta completa tal como se almacena en el sistema
+      properties:
+        id:
+          type: string
+          example: "OFE-2026-001"
+
+    OfertaListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 80
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Oferta'
+
+    # ── CURSOS ──
+
+    CursoInput:
+      type: object
+      required:
+        - titulo
+        - descripcion
+        - fecha_inicio
+        - fecha_fin
+      properties:
+        titulo:
+          type: string
+          example: "Introducción a la programación"
+        descripcion:
+          type: string
+          example: "Curso básico de programación orientado a desempleados"
+        fecha_inicio:
+          type: string
+          format: date
+          example: "2026-05-14"
+        fecha_fin:
+          type: string
+          format: date
+          example: "2026-12-31"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion"]
+
+    Curso:
+      allOf:
+        - $ref: '#/components/schemas/CursoInput'
+      description: Curso completo tal como se almacena en el sistema
+      properties:
+        id:
+          type: integer
+          example: 1
+        estado:
+          type: string
+          enum: [activo, inactivo, finalizado]
+          example: "activo"
+
+    CursoListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 45
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Curso'
+
+    # ── NOTIFICACIONES ──
+
+    NotificacionInput:
+      type: object
+      description: Datos necesarios para enviar una notificación
+      required:
+        - destinatarios
+        - asunto
+        - mensaje
+      properties:
+        destinatarios:
+          type: array
+          items:
+            type: string
+            format: email
+          example: ["usuario1@email.com", "empresa2@email.com"]
+        asunto:
+          type: string
+          example: "Resultado de su solicitud de certificado LABORA"
+        mensaje:
+          type: string
+          example: "Su certificado ha sido generado correctamente y ya puede descargarlo."
+        tipo:
+          type: string
+          enum: [OFERTA, CERTIFICADO, ESTADO_CANDIDATURA, ALERTA]
+          example: "CERTIFICADO"
+
+    Notificacion:
+      allOf:
+        - $ref: '#/components/schemas/NotificacionInput'
+      description: Notificación completa tal como se registra en el sistema
+      properties:
+        id:
+          type: integer
+          example: 10458
+        estado:
+          type: string
+          enum: [PENDIENTE, ENVIADO, ERROR]
+          default: PENDIENTE
+          example: "ENVIADO"
+        fecha_envio:
+          type: string
+          format: date-time
+          example: "2026-05-14T19:45:00Z"
