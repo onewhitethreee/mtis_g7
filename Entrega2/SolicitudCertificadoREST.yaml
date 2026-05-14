@@ -1,0 +1,135 @@
+openapi: 3.0.3
+
+info:
+  title: Servicio REST de Solicitud de Certificado
+  version: "1.0.0"
+  description: API REST para solicitar certificados de LABORA y consultar el estado de una solicitud.
+
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /solicitudes-certificado:
+    post:
+      summary: Crear una solicitud de certificado
+      operationId: crearSolicitudCertificado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicitudCertificadoRequest"
+            example:
+              nifNie: "12345678A"
+              tipoCertificado: "DEMANDANTE_ACTIVO"
+              motivo: "Presentación en convocatoria pública"
+      responses:
+        "201":
+          description: Solicitud procesada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitudCertificadoResponse"
+              example:
+                idSolicitud: "SOL-001"
+                estadoSolicitud: "GENERADA"
+                codigoVerificacion: "CERT-001"
+                mensaje: "Certificado generado correctamente"
+        "400":
+          description: Datos de solicitud incorrectos
+        "404":
+          description: Demandante no encontrado
+        "500":
+          description: Error interno del servidor
+
+  /solicitudes-certificado/{idSolicitud}:
+    get:
+      summary: Consultar el estado de una solicitud de certificado
+      operationId: consultarSolicitudCertificado
+      parameters:
+        - name: idSolicitud
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "SOL-001"
+      responses:
+        "200":
+          description: Solicitud encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicitudCertificadoDetalle"
+        "404":
+          description: Solicitud no encontrada
+
+components:
+  schemas:
+    SolicitudCertificadoRequest:
+      type: object
+      required:
+        - nifNie
+        - tipoCertificado
+      properties:
+        nifNie:
+          type: string
+          description: NIF o NIE del demandante
+          example: "12345678A"
+        tipoCertificado:
+          type: string
+          description: Tipo de certificado solicitado
+          enum:
+            - DEMANDANTE_ACTIVO
+            - INSCRIPCION_DEMANDA
+            - SITUACION_LABORAL
+            - FORMACION_REALIZADA
+          example: "DEMANDANTE_ACTIVO"
+        motivo:
+          type: string
+          description: Motivo de la solicitud
+          example: "Presentación en convocatoria pública"
+
+    SolicitudCertificadoResponse:
+      type: object
+      properties:
+        idSolicitud:
+          type: string
+          example: "SOL-001"
+        estadoSolicitud:
+          type: string
+          enum:
+            - GENERADA
+            - RECHAZADA
+            - EN_TRAMITE
+          example: "GENERADA"
+        codigoVerificacion:
+          type: string
+          example: "CERT-001"
+        mensaje:
+          type: string
+          example: "Certificado generado correctamente"
+
+    SolicitudCertificadoDetalle:
+      type: object
+      properties:
+        idSolicitud:
+          type: string
+          example: "SOL-001"
+        nifNie:
+          type: string
+          example: "12345678A"
+        tipoCertificado:
+          type: string
+          example: "DEMANDANTE_ACTIVO"
+        motivo:
+          type: string
+          example: "Presentación en convocatoria pública"
+        estadoSolicitud:
+          type: string
+          example: "GENERADA"
+        codigoVerificacion:
+          type: string
+          example: "CERT-001"
+        mensaje:
+          type: string
+          example: "Certificado generado correctamente"
