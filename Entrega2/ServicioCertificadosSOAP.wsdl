@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<definitions
+    xmlns="http://schemas.xmlsoap.org/wsdl/"
+    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://labora/servicioCertificados"
+    targetNamespace="http://labora/servicioCertificados"
+    name="ServicioCertificadosSOAP">
+
+  <types>
+    <xsd:schema 
+        targetNamespace="http://labora/servicioCertificados"
+        elementFormDefault="qualified">
+
+      <xsd:element name="solicitarCertificadoRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifNie" type="xsd:string"/>
+            <xsd:element name="tipoCertificado" type="xsd:string"/>
+            <xsd:element name="motivo" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="solicitarCertificadoResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="idCertificado" type="xsd:string"/>
+            <xsd:element name="codigoVerificacion" type="xsd:string"/>
+            <xsd:element name="fechaEmision" type="xsd:date"/>
+            <xsd:element name="estado" type="xsd:string"/>
+            <xsd:element name="mensaje" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="consultarCertificadoRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="codigoVerificacion" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="consultarCertificadoResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="idCertificado" type="xsd:string"/>
+            <xsd:element name="nifNie" type="xsd:string"/>
+            <xsd:element name="tipoCertificado" type="xsd:string"/>
+            <xsd:element name="fechaEmision" type="xsd:date"/>
+            <xsd:element name="estado" type="xsd:string"/>
+            <xsd:element name="mensaje" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </types>
+
+  <message name="SolicitarCertificadoInput">
+    <part name="parameters" element="tns:solicitarCertificadoRequest"/>
+  </message>
+
+  <message name="SolicitarCertificadoOutput">
+    <part name="parameters" element="tns:solicitarCertificadoResponse"/>
+  </message>
+
+  <message name="ConsultarCertificadoInput">
+    <part name="parameters" element="tns:consultarCertificadoRequest"/>
+  </message>
+
+  <message name="ConsultarCertificadoOutput">
+    <part name="parameters" element="tns:consultarCertificadoResponse"/>
+  </message>
+
+  <portType name="ServicioCertificadosPortType">
+    <operation name="solicitarCertificado">
+      <input message="tns:SolicitarCertificadoInput"/>
+      <output message="tns:SolicitarCertificadoOutput"/>
+    </operation>
+
+    <operation name="consultarCertificado">
+      <input message="tns:ConsultarCertificadoInput"/>
+      <output message="tns:ConsultarCertificadoOutput"/>
+    </operation>
+  </portType>
+
+  <binding name="ServicioCertificadosSOAPBinding" type="tns:ServicioCertificadosPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <operation name="solicitarCertificado">
+      <soap:operation soapAction="solicitarCertificado"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+    </operation>
+
+    <operation name="consultarCertificado">
+      <soap:operation soapAction="consultarCertificado"/>
+      <input>
+        <soap:body use="literal"/>
+      </input>
+      <output>
+        <soap:body use="literal"/>
+      </output>
+    </operation>
+  </binding>
+
+  <service name="ServicioCertificadosSOAPService">
+    <port name="ServicioCertificadosSOAPPort" binding="tns:ServicioCertificadosSOAPBinding">
+      <soap:address location="http://localhost:8080/ws/certificados"/>
+    </port>
+  </service>
+
+</definitions>
