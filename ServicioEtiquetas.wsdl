@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.example.org/ServicioEtiquetas/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServicioEtiquetas" targetNamespace="http://www.example.org/ServicioEtiquetas/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.example.org/ServicioEtiquetas/">
+      <xsd:element name="ListarEtiquetas">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ListarEtiquetasResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+                        <xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1">
+      			</xsd:element>
+                        <xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+                        <xsd:element name="etiquetas" type="tns:Etiqueta"
+      				maxOccurs="unbounded" minOccurs="0">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ComprobarEtiquetas">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="etiquetas" type="tns:Etiqueta" maxOccurs="unbounded" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ComprobarEtiquetasResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"></xsd:element>
+      			<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      			<xsd:element name="etiquetas_incorrectas" type="tns:Etiqueta"
+      				maxOccurs="unbounded" minOccurs="0">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    
+      <xsd:complexType name="Etiqueta">
+      	<xsd:sequence>
+      		<xsd:element name="id" type="xsd:int" maxOccurs="1" minOccurs="0"></xsd:element>
+      		<xsd:element name="nombre" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+      		<xsd:element name="categoria" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="CrearEtiquetaRequest">
+    <wsdl:part element="tns:CrearEtiqueta" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="CrearEtiquetaResponse">
+    <wsdl:part element="tns:CrearEtiquetaResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="EliminarEtiquetaRequest">
+  	<wsdl:part name="parameters" element="tns:EliminarEtiqueta"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="EliminarEtiquetaResponse">
+  	<wsdl:part name="parameters" element="tns:EliminarEtiquetaResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ListarEtiquetasRequest">
+  	<wsdl:part name="parameters" element="tns:ListarEtiquetas"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ListarEtiquetasResponse">
+  	<wsdl:part name="parameters" element="tns:ListarEtiquetasResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ComprobarEtiquetasRequest">
+  	<wsdl:part name="parameters" element="tns:ComprobarEtiquetas"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ComprobarEtiquetasResponse">
+  	<wsdl:part name="parameters" element="tns:ComprobarEtiquetasResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ServicioEtiquetas">
+    <wsdl:operation name="ListarEtiquetas">
+    	<wsdl:input message="tns:ListarEtiquetasRequest"></wsdl:input>
+    	<wsdl:output message="tns:ListarEtiquetasResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ComprobarEtiquetas">
+    	<wsdl:input message="tns:ComprobarEtiquetasRequest"></wsdl:input>
+    	<wsdl:output message="tns:ComprobarEtiquetasResponse"></wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServicioEtiquetasSOAP"
+  	type="tns:ServicioEtiquetas">
+  	<soap:binding style="document"
+  		transport="http://schemas.xmlsoap.org/soap/http" />
+  	<wsdl:operation name="CrearEtiqueta">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioEtiquetas/CrearEtiqueta" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ListarEtiquetas">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioEtiquetas/ListarEtiquetas" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ComprobarEtiquetas">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioEtiquetas/ComprobarEtiquetas" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServicioEtiquetas">
+    <wsdl:port binding="tns:ServicioEtiquetasSOAP" name="ServicioEtiquetasSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

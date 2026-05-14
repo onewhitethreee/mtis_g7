@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.example.org/ServicioValidacion/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServicioValidacion" targetNamespace="http://www.example.org/ServicioValidacion/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.example.org/ServicioValidacion/">
+      <xsd:element name="ValidarNIFNIE">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifnie" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ValidarCIF">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="cif" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ValidarIBAN">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="iban" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ValidarCorreo">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="correo" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExisteNIFNIE">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="nifnie" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExisteCIF">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="cif" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExisteIBAN">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="iban" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ExisteCorreo">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="correo" type="xsd:string"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    
+      <xsd:complexType name="ValidacionResponse">
+      	<xsd:sequence>
+      		<xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"></xsd:element>
+      		<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      	</xsd:sequence>
+      </xsd:complexType>
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="ValidarNIFNIERequest">
+    <wsdl:part element="tns:ValidarNIFNIE" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ValidarNIFNIEResponse">
+    <wsdl:part name="parameters" type="tns:ValidacionResponse"/>
+  </wsdl:message>
+  <wsdl:message name="ValidarCIFRequest">
+  	<wsdl:part name="parameters" element="tns:ValidarCIF"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ValidarCIFResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ValidarIBANRequest">
+  	<wsdl:part name="parameters" element="tns:ValidarIBAN"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ValidarIBANResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ValidarCorreoRequest">
+  	<wsdl:part name="parameters" element="tns:ValidarCorreo"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ValidarCorreoResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteNIFNIERequest">
+  	<wsdl:part name="parameters" element="tns:ExisteNIFNIE"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteNIFNIEResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteCIFRequest">
+  	<wsdl:part name="parameters" element="tns:ExisteCIF"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteCIFResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteIBANRequest">
+  	<wsdl:part name="parameters" element="tns:ExisteIBAN"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteIBANResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteCorreoRequest">
+  	<wsdl:part name="parameters" element="tns:ExisteCorreo"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ExisteCorreoResponse">
+  	<wsdl:part name="parameters" type="tns:ValidacionResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ServicioValidacion">
+    <wsdl:operation name="ValidarNIFNIE">
+      <wsdl:input message="tns:ValidarNIFNIERequest"/>
+      <wsdl:output message="tns:ValidarNIFNIEResponse"/>
+    </wsdl:operation>
+    <wsdl:operation name="ValidarCIF">
+    	<wsdl:input message="tns:ValidarCIFRequest"></wsdl:input>
+    	<wsdl:output message="tns:ValidarCIFResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ValidarIBAN">
+    	<wsdl:input message="tns:ValidarIBANRequest"></wsdl:input>
+    	<wsdl:output message="tns:ValidarIBANResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ValidarCorreo">
+    	<wsdl:input message="tns:ValidarCorreoRequest"></wsdl:input>
+    	<wsdl:output message="tns:ValidarCorreoResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExisteNIFNIE">
+    	<wsdl:input message="tns:ExisteNIFNIERequest"></wsdl:input>
+    	<wsdl:output message="tns:ExisteNIFNIEResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExisteCIF">
+    	<wsdl:input message="tns:ExisteCIFRequest"></wsdl:input>
+    	<wsdl:output message="tns:ExisteCIFResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExisteIBAN">
+    	<wsdl:input message="tns:ExisteIBANRequest"></wsdl:input>
+    	<wsdl:output message="tns:ExisteIBANResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ExisteCorreo">
+    	<wsdl:input message="tns:ExisteCorreoRequest"></wsdl:input>
+    	<wsdl:output message="tns:ExisteCorreoResponse"></wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServicioValidacionSOAP"
+  	type="tns:ServicioValidacion">
+  	<soap:binding style="document"
+  		transport="http://schemas.xmlsoap.org/soap/http" />
+  	<wsdl:operation name="ValidarNIFNIE">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ValidarNIFNIE" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ValidarCIF">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ValidarCIF" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ValidarIBAN">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ValidarIBAN" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ValidarCorreo">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ValidarCorreo" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ExisteNIFNIE">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ExisteNIFNIE" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ExisteCIF">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ExisteCIF" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ExisteIBAN">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ExisteIBAN" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="ExisteCorreo">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioValidacion/ExisteCorreo" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServicioValidacion">
+    <wsdl:port binding="tns:ServicioValidacionSOAP" name="ServicioValidacionSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
