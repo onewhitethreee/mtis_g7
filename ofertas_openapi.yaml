@@ -1,0 +1,276 @@
+openapi: '3.0.3'
+info:
+  title: LABORA - Servicio de Ofertas de Trabajo
+  version: '1.0'
+  description: Contrato REST para la gestión de ofertas de trabajo en el sistema LABORA.
+
+paths:
+
+  /ofertas:
+    post:
+      tags:
+        - ofertas
+      summary: Crear una nueva oferta de trabajo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfertaInput'
+      responses:
+        '201':
+          description: Oferta creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No existe ninguna empresa con ese CIF
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+    get:
+      tags:
+        - ofertas
+      summary: Listar ofertas filtradas por etiquetas y otros criterios
+      parameters:
+        - name: p
+          in: query
+          description: Número de página
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: s
+          in: query
+          description: Número de entradas por página
+          schema:
+            type: integer
+            default: 10
+            maximum: 50
+        - name: q
+          in: query
+          description: Orden por fecha de publicación
+          schema:
+            type: string
+            enum: [ascendente, descendente]
+            default: descendente
+        - name: search
+          in: query
+          description: Filtrar por título o descripción
+          schema:
+            type: string
+        - name: etiquetas
+          in: query
+          description: Filtrar por etiquetas (sectores o campos). Se pueden indicar varias separadas por comas
+          schema:
+            type: string
+            example: "informatica,programacion"
+        - name: estado
+          in: query
+          description: Filtrar por estado de la oferta
+          schema:
+            type: string
+            enum: [ACTIVA, CERRADA, PAUSADA]
+        - name: cif_empresa
+          in: query
+          description: Filtrar por empresa publicadora
+          schema:
+            type: string
+            example: "B12345678"
+        - name: duracion_contrato
+          in: query
+          description: Filtrar por tipo de contrato
+          schema:
+            type: string
+            enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+      responses:
+        '200':
+          description: Listado de ofertas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    description: Total de resultados encontrados
+                  pagina:
+                    type: integer
+                  resultados:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Oferta'
+        '500':
+          description: Error interno del servidor
+
+  /ofertas/{id}:
+    get:
+      tags:
+        - ofertas
+      summary: Obtener una oferta por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único de la oferta
+          schema:
+            type: string
+            example: "OFE-2026-001"
+      responses:
+        '200':
+          description: Oferta encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '404':
+          description: No existe ninguna oferta con ese ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+    put:
+      tags:
+        - ofertas
+      summary: Modificar los datos de una oferta
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único de la oferta
+          schema:
+            type: string
+            example: "OFE-2026-001"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OfertaInput'
+      responses:
+        '200':
+          description: Oferta modificada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Oferta'
+        '400':
+          description: Los datos introducidos son incorrectos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: No existe ninguna oferta con ese ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+    delete:
+      tags:
+        - ofertas
+      summary: Eliminar una oferta por su ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Identificador único de la oferta
+          schema:
+            type: string
+            example: "OFE-2026-001"
+      responses:
+        '200':
+          description: Oferta eliminada correctamente
+        '404':
+          description: No existe ninguna oferta con ese ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Error interno del servidor
+
+components:
+  schemas:
+
+    Error:
+      type: object
+      required:
+        - mensaje
+      properties:
+        mensaje:
+          type: string
+          example: "No existe ninguna oferta con ese ID"
+
+    OfertaInput:
+      type: object
+      description: Datos necesarios para crear o modificar una oferta de trabajo
+      required:
+        - cif_empresa
+        - titulo
+        - descripcion
+        - duracion_contrato
+        - estado
+        - etiquetas
+      properties:
+        cif_empresa:
+          type: string
+          description: CIF de la empresa que publica la oferta
+          example: "B12345678"
+        titulo:
+          type: string
+          description: Título de la oferta de trabajo
+          example: "Desarrollador Full Stack"
+        descripcion:
+          type: string
+          description: Descripción detallada de la oferta y requisitos
+          example: "Buscamos desarrollador con experiencia en React y Node.js"
+        duracion_contrato:
+          type: string
+          description: Tipo de contrato ofertado
+          enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+          example: "INDEFINIDO"
+        estado:
+          type: string
+          description: Estado actual de la oferta
+          enum: [ACTIVA, CERRADA, PAUSADA]
+          default: ACTIVA
+          example: "ACTIVA"
+        etiquetas:
+          type: array
+          description: Etiquetas o sectores asociados a la oferta para facilitar el filtrado y el matching
+          items:
+            type: string
+          example: ["informatica", "programacion", "fullstack"]
+        fecha_publicacion:
+          type: string
+          format: date
+          description: Fecha de publicación de la oferta (se asigna automáticamente si no se indica)
+          example: "2026-05-14"
+
+    Oferta:
+      allOf:
+        - $ref: '#/components/schemas/OfertaInput'
+      description: Oferta completa tal como se almacena en el sistema
+      properties:
+        id:
+          type: string
+          description: Identificador único de la oferta generado por el sistema
+          example: "OFE-2026-001"
