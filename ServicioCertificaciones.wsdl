@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+                  xmlns:tns="http://www.example.org/ServicioCertificaciones/"
+                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                  name="ServicioCertificaciones"
+                  targetNamespace="http://www.example.org/ServicioCertificaciones/">
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.example.org/ServicioCertificaciones/">
+
+      <xsd:complexType name="Certificacion">
+        <xsd:sequence>
+          <xsd:element name="id" type="xsd:int" maxOccurs="1" minOccurs="0"/>
+          <xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+          <xsd:element name="tipo" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+          <xsd:element name="estado" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+          <xsd:element name="fecha_emision" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+          <xsd:element name="codigo_verificacion" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="CrearCertificacion">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="tipo" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="motivo" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="CrearCertificacionResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="certificacion" type="tns:Certificacion" maxOccurs="1" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="MarcarCertificacion">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id" type="xsd:int" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="estado" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="observaciones" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="MarcarCertificacionResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"/>
+            <xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"/>
+            <xsd:element name="certificacion" type="tns:Certificacion" maxOccurs="1" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="CrearCertificacionRequest">
+    <wsdl:part element="tns:CrearCertificacion" name="parameters"/>
+  </wsdl:message>
+
+  <wsdl:message name="CrearCertificacionResponse">
+    <wsdl:part element="tns:CrearCertificacionResponse" name="parameters"/>
+  </wsdl:message>
+
+  <wsdl:message name="MarcarCertificacionRequest">
+    <wsdl:part element="tns:MarcarCertificacion" name="parameters"/>
+  </wsdl:message>
+
+  <wsdl:message name="MarcarCertificacionResponse">
+    <wsdl:part element="tns:MarcarCertificacionResponse" name="parameters"/>
+  </wsdl:message>
+
+  <wsdl:portType name="ServicioCertificaciones">
+    <wsdl:operation name="CrearCertificacion">
+      <wsdl:input message="tns:CrearCertificacionRequest"/>
+      <wsdl:output message="tns:CrearCertificacionResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="MarcarCertificacion">
+      <wsdl:input message="tns:MarcarCertificacionRequest"/>
+      <wsdl:output message="tns:MarcarCertificacionResponse"/>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <wsdl:binding name="ServicioCertificacionesSOAP" type="tns:ServicioCertificaciones">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <wsdl:operation name="CrearCertificacion">
+      <soap:operation soapAction="http://www.example.org/ServicioCertificaciones/CrearCertificacion"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="MarcarCertificacion">
+      <soap:operation soapAction="http://www.example.org/ServicioCertificaciones/MarcarCertificacion"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+
+  <wsdl:service name="ServicioCertificaciones">
+    <wsdl:port binding="tns:ServicioCertificacionesSOAP" name="ServicioCertificacionesSOAP">
+      <soap:address location="http://www.example.org/"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
