@@ -17,6 +17,8 @@ tags:
     description: Gestión de cursos de formación de la plataforma LABORA
   - name: candidaturas
     description: Gestión de candidaturas de demandantes a ofertas
+  - name: matching
+    description: Seleccionar la mejor candidatura de una oferta
   - name: notificaciones
     description: Envío y consulta de notificaciones a usuarios y empresas
 
@@ -650,7 +652,29 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
+     
+  # ─────────────────────────────────────────
+  # MATCHING
+  # ─────────────────────────────────────────
  
+  /matching/{id}:
+    get:
+      tags:
+        - matching
+      summary: Obtener la mejor candidatura dada una oferta
+      parameters:
+        - $ref: '#/components/parameters/IdOferta'
+      responses:
+        '200':
+          description: Matching realizado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidatura'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
   # ─────────────────────────────────────────
   # NOTIFICACIONES
