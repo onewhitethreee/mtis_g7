@@ -5,7 +5,7 @@
       <xsd:element name="AutenticarUsuario">
         <xsd:complexType>
           <xsd:sequence>
-          	<xsd:element name="correo" type="xsd:string" maxOccurs="1" minOccurs="1"/>
+          	<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"/>
           	<xsd:element name="contraseña" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
           </xsd:sequence>
         </xsd:complexType>
@@ -23,7 +23,7 @@
       	<xsd:complexType>
       		<xsd:sequence>
 
-      			<xsd:element name="correo" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+      			<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
       			<xsd:element name="nivel" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
       		</xsd:sequence>
       	</xsd:complexType>
@@ -37,9 +37,26 @@
       		</xsd:sequence>
       	</xsd:complexType>
       </xsd:element>
-    
-        
-        </xsd:schema>
+
+
+      <xsd:element name="CrearContraseña">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+      			<xsd:element name="contraseña" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="CrearContraseñaResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+
+      			<xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"></xsd:element>
+      			<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
   </wsdl:types>
   <wsdl:message name="AutenticarUsuarioRequest">
     <wsdl:part element="tns:AutenticarUsuario" name="parameters"/>
@@ -53,6 +70,12 @@
   <wsdl:message name="VerificarPrivilegiosResponse">
   	<wsdl:part name="parameters" element="tns:VerificarPrivilegiosResponse"></wsdl:part>
   </wsdl:message>
+  <wsdl:message name="CrearContraseñaRequest">
+  	<wsdl:part name="parameters" element="tns:CrearContraseña"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="CrearContraseñaResponse">
+  	<wsdl:part name="parameters" element="tns:CrearContraseñaResponse"></wsdl:part>
+  </wsdl:message>
   <wsdl:portType name="ServicioIdentidad">
     <wsdl:operation name="AutenticarUsuario">
       <wsdl:input message="tns:AutenticarUsuarioRequest"/>
@@ -61,6 +84,10 @@
     <wsdl:operation name="VerificarPrivilegios">
     	<wsdl:input message="tns:VerificarPrivilegiosRequest"></wsdl:input>
     	<wsdl:output message="tns:VerificarPrivilegiosResponse"></wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="CrearContraseña">
+    	<wsdl:input message="tns:CrearContraseñaRequest"></wsdl:input>
+    	<wsdl:output message="tns:CrearContraseñaResponse"></wsdl:output>
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="ServicioIdentidadSOAP"
@@ -80,6 +107,16 @@
   	<wsdl:operation name="VerificarPrivilegios">
   		<soap:operation
   			soapAction="http://www.example.org/ServicioIdentidad/VerificarPrivilegios" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  	<wsdl:operation name="CrearContraseña">
+  		<soap:operation
+  			soapAction="http://www.example.org/ServicioIdentidad/CrearContraseña" />
   		<wsdl:input>
   			<soap:body use="literal" />
   		</wsdl:input>
