@@ -15,6 +15,8 @@ tags:
     description: Gestión de ofertas de trabajo publicadas por empresas
   - name: cursos
     description: Gestión de cursos de formación de la plataforma LABORA
+  - name: candidaturas
+    description: Gestión de candidaturas de demandantes a ofertas
   - name: notificaciones
     description: Envío y consulta de notificaciones a usuarios y empresas
 
@@ -533,6 +535,124 @@ paths:
           $ref: '#/components/responses/InternalError'
 
   # ─────────────────────────────────────────
+  # CANDIDATURAS
+  # ─────────────────────────────────────────
+
+  /candidaturas:
+    post:
+      tags:
+        - candidaturas
+      summary: Crear una nueva candidatura
+      description: Crear la candidatura de un usuario en una oferta de trabajo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidaturaInput'
+      responses:
+        '201':
+          description: Candidatura creada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidatura'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    get:
+      tags:
+        - candidaturas
+      summary: Listar candidaturas de una oferta
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - name: id_oferta
+          in: query
+          description: Filtrar candidaturas por oferta
+          schema:
+            type: string
+            example: "OFE-2026-001"
+        - name: id_candidato
+          in: query
+          description: Filtrar candidaturas por candidato
+          schema:
+            type: string
+            example: "12345678A"
+      responses:
+        '200':
+          description: Listado de candidaturas obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CandidaturaListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound' 
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /candidaturas/{id}:
+    get:
+      tags:
+        - candidaturas
+      summary: Obtener una candidatura por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdCandidatura'
+      responses:
+        '200':
+          description: Candidatura encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidatura'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - candidaturas
+      summary: Modificar los datos de una candidatura
+      parameters:
+        - $ref: '#/components/parameters/IdCandidatura'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CandidaturaInput'
+      responses:
+        '200':
+          description: Candidatura modificada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Candidatura'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - candidaturas
+      summary: Eliminar una candidatura por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdCandidatura'
+      responses:
+        '204':
+          description: Candidatura eliminada correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+ 
+
+  # ─────────────────────────────────────────
   # NOTIFICACIONES
   # ─────────────────────────────────────────
 
@@ -660,6 +780,15 @@ components:
       schema:
         type: integer
         example: 10458
+
+    IdCandidatura:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la candidatura
+      schema:
+        type: integer
+        example: 12345
 
   # ── RESPUESTAS REUTILIZABLES ──────────────
 
@@ -940,6 +1069,51 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Curso'
+
+    # ── CANDIDATURAS ──
+
+    CandidaturaInput:
+      type: object
+      required:
+        - id_candidato
+        - id_oferta
+        - fecha_publicacion
+      properties:
+        id_candidato:
+          type: string
+          description: NIF/NIE del candidato
+          example: "12345678A"
+        id_oferta:
+          type: string
+          description: Identificador de la oferta
+          example: "OFE-2026-001"
+        fecha_publicacion:
+          type: string
+          format: date
+          example: "2026-05-14"
+
+    Candidatura:
+      allOf:
+        - $ref: '#/components/schemas/CandidaturaInput'
+      description: Curso completo tal como se almacena en el sistema
+      properties:
+        id:
+          type: integer
+          example: 1
+
+    CandidaturaListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 45
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidatura'
 
     # ── NOTIFICACIONES ──
 
