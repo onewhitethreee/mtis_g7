@@ -117,9 +117,14 @@ const ofertasIdPUT = ({ id, ofertaInput, body }) => new Promise(
 const ofertasPOST = ({ ofertaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const data = ofertaInput || body;
-      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
-      if (!fields || !fields.length) {
+      const raw = ofertaInput || body;
+      if (!raw || !Object.keys(raw).length) {
+        return reject(Service.rejectResponse('Datos de oferta inválidos', 400));
+      }
+
+      const { etiquetas, ...data } = raw;
+      const fields = Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
+      if (!fields.length) {
         return reject(Service.rejectResponse('Datos de oferta inválidos', 400));
       }
 
@@ -132,6 +137,18 @@ const ofertasPOST = ({ ofertaInput, body }) => new Promise(
       );
 
       const insertId = data.id || result.insertId;
+
+      if (etiquetas && etiquetas.length) {
+        const [etiquetaRows] = await pool.query(
+          `SELECT id FROM etiqueta WHERE nombre IN (${etiquetas.map(() => '?').join(',')})`,
+          etiquetas,
+        );
+        if (etiquetaRows.length) {
+          const etiquetaValues = etiquetaRows.map((e) => [insertId, e.id]);
+          await pool.query('INSERT INTO oferta_etiqueta (id_oferta, id_etiqueta) VALUES ?', [etiquetaValues]);
+        }
+      }
+
       const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
