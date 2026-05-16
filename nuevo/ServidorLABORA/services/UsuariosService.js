@@ -1,120 +1,137 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
 
-/**
-* Listar usuarios con filtros opcionales
-* Devuelve una lista paginada de usuarios con filtros opcionales por tipo y estado.
-*
-* p Integer Número de página (optional)
-* s Integer Número de entradas por página (optional)
-* q String Orden de los resultados por fecha (optional)
-* search String Filtrar por nombre, apellidos o email (optional)
-* tipo String Filtrar por tipo de usuario (optional)
-* activo Boolean Filtrar por estado activo/inactivo (optional)
-* returns UsuarioListResponse
-* */
-const usuariosGET = ({ p, s, q, search, tipo, activo }) => new Promise(
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+const filterMap = {
+  search: 'nombre',
+  tipo: 'tipo',
+  activo: 'activo',
+};
+
+const buildFilterClause = (filters) => {
+  const clauses = [];
+  const values = [];
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    const column = filterMap[key] || key;
+    if (key === 'search') {
+      clauses.push(`(${column} LIKE ? OR apellidos LIKE ? OR email LIKE ?)`);
+      values.push(`%${value}%`, `%${value}%`, `%${value}%`);
+    } else {
+      clauses.push(`${column} = ?`);
+      values.push(value);
+    }
+  });
+  return {
+    clause: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    values,
+  };
+};
+
+const usuariosGET = ({ p = 1, s = 10, q, search, tipo, activo }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        p,
-        s,
-        q,
-        search,
-        tipo,
-        activo,
-      }));
+      const page = Number(p) > 0 ? Number(p) : 1;
+      const size = Number(s) > 0 ? Number(s) : 10;
+      const offset = (page - 1) * size;
+      const order = q === 'desc' ? 'DESC' : 'ASC';
+
+      const filter = buildFilterClause({ search, tipo, activo });
+      const query = `SELECT * FROM usuarios ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const [rows] = await pool.query(query, [...filter.values, size, offset]);
+
+      resolve(Service.successResponse(rows));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Eliminar un usuario por su NIF/NIE
-* Elimina permanentemente un usuario del sistema.
-*
-* id String NIF o NIE del usuario
-* no response value expected for this operation
-* */
+
 const usuariosIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [result] = await pool.execute('DELETE FROM usuarios WHERE id = ?', [id]);
+      if (result.affectedRows === 0) {
+        return reject(Service.rejectResponse('Usuario no encontrado', 404));
+      }
+      resolve(Service.successResponse({ id }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Obtener un usuario por su NIF/NIE
-* Devuelve los datos completos de un usuario a partir de su NIF o NIE.
-*
-* id String NIF o NIE del usuario
-* returns Usuario
-* */
+
 const usuariosIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id]);
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Usuario no encontrado', 404));
+      }
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Modificar los datos de un usuario
-* Actualiza los datos de un usuario existente. También se usa para activar o desactivar el perfil.
-*
-* id String NIF o NIE del usuario
-* usuarioInput UsuarioInput 
-* returns Usuario
-* */
+
 const usuariosIdPUT = ({ id, usuarioInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-        usuarioInput,
-      }));
+      const fields = usuarioInput && Object.keys(usuarioInput).filter((k) => usuarioInput[k] !== undefined && usuarioInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('No hay datos para actualizar', 400));
+      }
+
+      const setClause = fields.map((field) => `${field} = ?`).join(', ');
+      const values = fields.map((field) => usuarioInput[field]);
+      values.push(id);
+
+      await pool.execute(`UPDATE usuarios SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id]);
+
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Usuario no encontrado', 404));
+      }
+
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Crear un nuevo usuario
-* Registra un nuevo ciudadano en el sistema LABORA como demandante de empleo activo.
-*
-* usuarioInput UsuarioInput 
-* returns Usuario
-* */
+
 const usuariosPOST = ({ usuarioInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        usuarioInput,
-      }));
+      const fields = usuarioInput && Object.keys(usuarioInput).filter((k) => usuarioInput[k] !== undefined && usuarioInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('Datos de usuario inválidos', 400));
+      }
+
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = fields.map((field) => usuarioInput[field]);
+
+      const [result] = await pool.execute(
+        `INSERT INTO usuarios (${fields.join(', ')}) VALUES (${placeholders})`,
+        values,
+      );
+
+      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [result.insertId]);
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );

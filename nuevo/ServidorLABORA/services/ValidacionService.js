@@ -1,5 +1,17 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
+
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
 
 /**
 * Validar tipo de certificado solicitado
@@ -11,14 +23,28 @@ const Service = require('./Service');
 const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promise(
   async (resolve, reject) => {
     try {
+      const { id_usuario, tipo_certificado } = validacionCertificadoInput;
+      
+      if (!id_usuario || !tipo_certificado) {
+        return reject(Service.rejectResponse('Datos de validación incompletos', 400));
+      }
+
+      const [usuario] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id_usuario]);
+      if (!usuario.length) {
+        return reject(Service.rejectResponse('Usuario no encontrado', 404));
+      }
+
+      const [certificado] = await pool.query('SELECT * FROM certificados WHERE tipo = ?', [tipo_certificado]);
+      if (!certificado.length) {
+        return reject(Service.rejectResponse('Tipo de certificado no válido', 400));
+      }
+
       resolve(Service.successResponse({
-        validacionCertificadoInput,
+        valido: true,
+        mensaje: 'Usuario elegible para certificado',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
@@ -32,14 +58,33 @@ const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promi
 const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Promise(
   async (resolve, reject) => {
     try {
+      const { id_usuario, id_oferta } = validacionElegibilidadInput;
+
+      if (!id_usuario || !id_oferta) {
+        return reject(Service.rejectResponse('Datos de validación incompletos', 400));
+      }
+
+      const [usuario] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id_usuario]);
+      if (!usuario.length) {
+        return reject(Service.rejectResponse('Usuario no encontrado', 404));
+      }
+
+      const [oferta] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id_oferta]);
+      if (!oferta.length) {
+        return reject(Service.rejectResponse('Oferta no encontrada', 404));
+      }
+
+      const usuarioData = usuario[0];
+      const ofertaData = oferta[0];
+
+      const cumpleRequisitos = usuarioData.etiquetas && usuarioData.etiquetas.includes(ofertaData.etiquetas);
+
       resolve(Service.successResponse({
-        validacionElegibilidadInput,
+        valido: cumpleRequisitos,
+        mensaje: cumpleRequisitos ? 'Usuario cumple requisitos' : 'Usuario no cumple requisitos',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
@@ -53,14 +98,24 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Prom
 const validacionEtiquetasPOST = ({ validacionEtiquetasInput }) => new Promise(
   async (resolve, reject) => {
     try {
+      const { etiquetas } = validacionEtiquetasInput;
+
+      if (!etiquetas || etiquetas.length === 0) {
+        return reject(Service.rejectResponse('Etiquetas no proporcionadas', 400));
+      }
+
+      const etiquetasArray = Array.isArray(etiquetas) ? etiquetas : etiquetas.split(',');
+      const placeholders = etiquetasArray.map(() => '?').join(',');
+      const [rows] = await pool.query(`SELECT * FROM etiquetas WHERE nombre IN (${placeholders})`, etiquetasArray);
+
+      const etiquetasValidas = rows.length === etiquetasArray.length;
+
       resolve(Service.successResponse({
-        validacionEtiquetasInput,
+        valido: etiquetasValidas,
+        mensaje: etiquetasValidas ? 'Todas las etiquetas son válidas' : 'Algunas etiquetas no son válidas',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
@@ -74,14 +129,29 @@ const validacionEtiquetasPOST = ({ validacionEtiquetasInput }) => new Promise(
 const validacionUsuariosPOST = ({ validacionUsuarioInput }) => new Promise(
   async (resolve, reject) => {
     try {
+      const { nombre, apellidos, email, id } = validacionUsuarioInput;
+
+      const errores = [];
+      if (!nombre || nombre.trim() === '') errores.push('Nombre requerido');
+      if (!apellidos || apellidos.trim() === '') errores.push('Apellidos requeridos');
+      if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errores.push('Email inválido');
+      if (!id || id.trim() === '') errores.push('NIF/NIE requerido');
+
+      if (errores.length > 0) {
+        return reject(Service.rejectResponse(errores.join(', '), 400));
+      }
+
+      const [usuarioExistente] = await pool.query('SELECT * FROM usuarios WHERE id = ? OR email = ?', [id, email]);
+      if (usuarioExistente.length > 0) {
+        return reject(Service.rejectResponse('Usuario o email ya existe', 400));
+      }
+
       resolve(Service.successResponse({
-        validacionUsuarioInput,
+        valido: true,
+        mensaje: 'Datos de usuario válidos',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
