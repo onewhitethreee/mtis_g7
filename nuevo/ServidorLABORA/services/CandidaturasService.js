@@ -1,115 +1,131 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
 
-/**
-* Listar candidaturas con filtros opcionales
-*
-* p Integer Número de página (optional)
-* s Integer Número de entradas por página (optional)
-* idUnderscoreoferta String Filtrar candidaturas por oferta (optional)
-* idUnderscorecandidato String Filtrar candidaturas por candidato (optional)
-* estado String Filtrar por estado de la candidatura (optional)
-* returns CandidaturaListResponse
-* */
-const candidaturasGET = ({ p, s, idUnderscoreoferta, idUnderscorecandidato, estado }) => new Promise(
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+const filterMap = {
+  idUnderscoreoferta: 'id_oferta',
+  idUnderscorecandidato: 'id_candidato',
+  estado: 'estado',
+};
+
+const buildFilterClause = (filters) => {
+  const clauses = [];
+  const values = [];
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    const column = filterMap[key] || key;
+    clauses.push(`${column} = ?`);
+    values.push(value);
+  });
+  return {
+    clause: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    values,
+  };
+};
+
+const candidaturasGET = ({ p = 1, s = 10, idUnderscoreoferta, idUnderscorecandidato, estado }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        p,
-        s,
-        idUnderscoreoferta,
-        idUnderscorecandidato,
-        estado,
-      }));
+      const page = Number(p) > 0 ? Number(p) : 1;
+      const size = Number(s) > 0 ? Number(s) : 10;
+      const offset = (page - 1) * size;
+
+      const filter = buildFilterClause({ idUnderscoreoferta, idUnderscorecandidato, estado });
+      const query = `SELECT * FROM candidaturas ${filter.clause} LIMIT ? OFFSET ?`;
+      const [rows] = await pool.query(query, [...filter.values, size, offset]);
+
+      resolve(Service.successResponse(rows));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Eliminar una candidatura por su ID
-*
-* id Integer Identificador único de la candidatura
-* no response value expected for this operation
-* */
+
 const candidaturasIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [result] = await pool.execute('DELETE FROM candidaturas WHERE id = ?', [id]);
+      if (result.affectedRows === 0) {
+        return reject(Service.rejectResponse('Candidatura no encontrada', 404));
+      }
+      resolve(Service.successResponse({ id }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Obtener una candidatura por su ID
-*
-* id Integer Identificador único de la candidatura
-* returns Candidatura
-* */
+
 const candidaturasIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [id]);
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Candidatura no encontrada', 404));
+      }
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Modificar el estado de una candidatura
-* Permite actualizar el estado de una candidatura. Usado para marcar una candidatura como aceptada o rechazada.
-*
-* id Integer Identificador único de la candidatura
-* candidaturaInput CandidaturaInput 
-* returns Candidatura
-* */
+
 const candidaturasIdPUT = ({ id, candidaturaInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-        candidaturaInput,
-      }));
+      const fields = candidaturaInput && Object.keys(candidaturaInput).filter((k) => candidaturaInput[k] !== undefined && candidaturaInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('No hay datos para actualizar', 400));
+      }
+
+      const setClause = fields.map((field) => `${field} = ?`).join(', ');
+      const values = fields.map((field) => candidaturaInput[field]);
+      values.push(id);
+
+      await pool.execute(`UPDATE candidaturas SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [id]);
+
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Candidatura no encontrada', 404));
+      }
+
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Registrar una nueva candidatura
-* Registra la candidatura de un demandante a una oferta de trabajo. Usado en el Flujo 2 tras verificar la elegibilidad.
-*
-* candidaturaInput CandidaturaInput 
-* returns Candidatura
-* */
+
 const candidaturasPOST = ({ candidaturaInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        candidaturaInput,
-      }));
+      const fields = candidaturaInput && Object.keys(candidaturaInput).filter((k) => candidaturaInput[k] !== undefined && candidaturaInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('Datos de candidatura inválidos', 400));
+      }
+
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = fields.map((field) => candidaturaInput[field]);
+
+      const [result] = await pool.execute(
+        `INSERT INTO candidaturas (${fields.join(', ')}) VALUES (${placeholders})`,
+        values,
+      );
+
+      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [result.insertId]);
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );

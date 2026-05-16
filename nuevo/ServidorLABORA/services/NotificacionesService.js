@@ -1,5 +1,17 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
+
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
 
 /**
 * Obtener el estado de una notificación por su ID
@@ -10,14 +22,13 @@ const Service = require('./Service');
 const notificacionesIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [rows] = await pool.query('SELECT * FROM notificaciones WHERE id = ?', [id]);
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Notificación no encontrada', 404));
+      }
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
@@ -31,14 +42,23 @@ const notificacionesIdGET = ({ id }) => new Promise(
 const notificacionesPOST = ({ notificacionInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        notificacionInput,
-      }));
+      const fields = notificacionInput && Object.keys(notificacionInput).filter((k) => notificacionInput[k] !== undefined && notificacionInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('Datos de notificación inválidos', 400));
+      }
+
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = fields.map((field) => notificacionInput[field]);
+
+      const [result] = await pool.execute(
+        `INSERT INTO notificaciones (${fields.join(', ')}) VALUES (${placeholders})`,
+        values,
+      );
+
+      const [rows] = await pool.query('SELECT * FROM notificaciones WHERE id = ?', [result.insertId]);
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );

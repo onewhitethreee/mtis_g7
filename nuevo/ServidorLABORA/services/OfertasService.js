@@ -1,122 +1,144 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
 
-/**
-* Listar ofertas filtradas por etiquetas y otros criterios
-* Devuelve una lista paginada de ofertas. Permite filtrar por etiquetas para el matching y las suscripciones.
-*
-* p Integer Número de página (optional)
-* s Integer Número de entradas por página (optional)
-* q String Orden de los resultados por fecha (optional)
-* search String Filtrar por título o descripción (optional)
-* etiquetas String Filtrar por etiquetas separadas por comas (optional)
-* estado String Filtrar por estado de la oferta (optional)
-* cifUnderscoreempresa String Filtrar por empresa publicadora (optional)
-* duracionUnderscorecontrato String Filtrar por tipo de contrato (optional)
-* returns OfertaListResponse
-* */
-const ofertasGET = ({ p, s, q, search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato }) => new Promise(
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+const filterMap = {
+  search: 'titulo',
+  etiquetas: 'etiquetas',
+  estado: 'estado',
+  cifUnderscoreempresa: 'cif_empresa',
+  duracionUnderscorecontrato: 'duracion_contrato',
+};
+
+const buildFilterClause = (filters) => {
+  const clauses = [];
+  const values = [];
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    const column = filterMap[key] || key;
+    if (key === 'search') {
+      clauses.push(`(${column} LIKE ? OR descripcion LIKE ?)`);
+      values.push(`%${value}%`, `%${value}%`);
+    } else if (key === 'etiquetas') {
+      const tags = value.split(',').map((tag) => tag.trim());
+      const placeholders = tags.map(() => 'etiquetas LIKE ?').join(' OR ');
+      clauses.push(`(${placeholders})`);
+      tags.forEach((tag) => values.push(`%${tag}%`));
+    } else {
+      clauses.push(`${column} = ?`);
+      values.push(value);
+    }
+  });
+  return {
+    clause: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    values,
+  };
+};
+
+const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        p,
-        s,
-        q,
-        search,
-        etiquetas,
-        estado,
-        cifUnderscoreempresa,
-        duracionUnderscorecontrato,
-      }));
+      const page = Number(p) > 0 ? Number(p) : 1;
+      const size = Number(s) > 0 ? Number(s) : 10;
+      const offset = (page - 1) * size;
+      const order = q === 'desc' ? 'DESC' : 'ASC';
+
+      const filter = buildFilterClause({ search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato });
+      const query = `SELECT * FROM ofertas ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const [rows] = await pool.query(query, [...filter.values, size, offset]);
+
+      resolve(Service.successResponse(rows));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Eliminar una oferta por su ID
-*
-* id String Identificador único de la oferta
-* no response value expected for this operation
-* */
+
 const ofertasIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [result] = await pool.execute('DELETE FROM ofertas WHERE id = ?', [id]);
+      if (result.affectedRows === 0) {
+        return reject(Service.rejectResponse('Oferta no encontrada', 404));
+      }
+      resolve(Service.successResponse({ id }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Obtener una oferta por su ID
-* Devuelve los datos de una oferta. Usado en el Flujo 2 para obtener los requisitos antes de validar la candidatura.
-*
-* id String Identificador único de la oferta
-* returns Oferta
-* */
+
 const ofertasIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id]);
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Oferta no encontrada', 404));
+      }
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Modificar los datos de una oferta
-*
-* id String Identificador único de la oferta
-* ofertaInput OfertaInput 
-* returns Oferta
-* */
+
 const ofertasIdPUT = ({ id, ofertaInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-        ofertaInput,
-      }));
+      const fields = ofertaInput && Object.keys(ofertaInput).filter((k) => ofertaInput[k] !== undefined && ofertaInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('No hay datos para actualizar', 400));
+      }
+
+      const setClause = fields.map((field) => `${field} = ?`).join(', ');
+      const values = fields.map((field) => ofertaInput[field]);
+      values.push(id);
+
+      await pool.execute(`UPDATE ofertas SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id]);
+
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Oferta no encontrada', 404));
+      }
+
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Publicar una nueva oferta de trabajo
-* Crea y publica una oferta de trabajo. Usado en el Flujo 1 tras validar la empresa.
-*
-* ofertaInput OfertaInput 
-* returns Oferta
-* */
+
 const ofertasPOST = ({ ofertaInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        ofertaInput,
-      }));
+      const fields = ofertaInput && Object.keys(ofertaInput).filter((k) => ofertaInput[k] !== undefined && ofertaInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('Datos de oferta inválidos', 400));
+      }
+
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = fields.map((field) => ofertaInput[field]);
+
+      const [result] = await pool.execute(
+        `INSERT INTO ofertas (${fields.join(', ')}) VALUES (${placeholders})`,
+        values,
+      );
+
+      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [result.insertId]);
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );

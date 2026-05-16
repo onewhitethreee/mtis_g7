@@ -1,112 +1,130 @@
 /* eslint-disable no-unused-vars */
+const mysql = require('mysql2/promise');
 const Service = require('./Service');
 
-/**
-* Listar cursos con filtros opcionales
-* Devuelve el catálogo de cursos disponibles. Usado en el Flujo 5 para que el demandante consulte las etiquetas disponibles antes de suscribirse.
-*
-* p Integer Número de página (optional)
-* s Integer Número de entradas por página (optional)
-* estado String Filtrar por estado del curso (optional)
-* etiqueta String Filtrar por etiqueta asociada al curso (optional)
-* returns CursoListResponse
-* */
-const cursosGET = ({ p, s, estado, etiqueta }) => new Promise(
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: 'root',
+  port: 3307,
+  database: 'labora',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+});
+
+const filterMap = {
+  estado: 'estado',
+  etiqueta: 'etiqueta',
+};
+
+const buildFilterClause = (filters) => {
+  const clauses = [];
+  const values = [];
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '') return;
+    const column = filterMap[key] || key;
+    clauses.push(`${column} = ?`);
+    values.push(value);
+  });
+  return {
+    clause: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    values,
+  };
+};
+
+const cursosGET = ({ p = 1, s = 10, estado, etiqueta }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        p,
-        s,
-        estado,
-        etiqueta,
-      }));
+      const page = Number(p) > 0 ? Number(p) : 1;
+      const size = Number(s) > 0 ? Number(s) : 10;
+      const offset = (page - 1) * size;
+
+      const filter = buildFilterClause({ estado, etiqueta });
+      const query = `SELECT * FROM cursos ${filter.clause} LIMIT ? OFFSET ?`;
+      const [rows] = await pool.query(query, [...filter.values, size, offset]);
+
+      resolve(Service.successResponse(rows));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Eliminar un curso por su ID
-*
-* id Integer Identificador único del curso
-* no response value expected for this operation
-* */
+
 const cursosIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [result] = await pool.execute('DELETE FROM cursos WHERE id = ?', [id]);
+      if (result.affectedRows === 0) {
+        return reject(Service.rejectResponse('Curso no encontrado', 404));
+      }
+      resolve(Service.successResponse({ id }));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Obtener un curso por su ID
-*
-* id Integer Identificador único del curso
-* returns Curso
-* */
+
 const cursosIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-      }));
+      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [id]);
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Curso no encontrado', 404));
+      }
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Modificar los datos de un curso
-*
-* id Integer Identificador único del curso
-* cursoInput CursoInput 
-* returns Curso
-* */
+
 const cursosIdPUT = ({ id, cursoInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        id,
-        cursoInput,
-      }));
+      const fields = cursoInput && Object.keys(cursoInput).filter((k) => cursoInput[k] !== undefined && cursoInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('No hay datos para actualizar', 400));
+      }
+
+      const setClause = fields.map((field) => `${field} = ?`).join(', ');
+      const values = fields.map((field) => cursoInput[field]);
+      values.push(id);
+
+      await pool.execute(`UPDATE cursos SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [id]);
+
+      if (!rows.length) {
+        return reject(Service.rejectResponse('Curso no encontrado', 404));
+      }
+
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
-/**
-* Crear un nuevo curso de formación
-*
-* cursoInput CursoInput 
-* returns Curso
-* */
+
 const cursosPOST = ({ cursoInput }) => new Promise(
   async (resolve, reject) => {
     try {
-      resolve(Service.successResponse({
-        cursoInput,
-      }));
+      const fields = cursoInput && Object.keys(cursoInput).filter((k) => cursoInput[k] !== undefined && cursoInput[k] !== null);
+      if (!fields || !fields.length) {
+        return reject(Service.rejectResponse('Datos de curso inválidos', 400));
+      }
+
+      const placeholders = fields.map(() => '?').join(', ');
+      const values = fields.map((field) => cursoInput[field]);
+
+      const [result] = await pool.execute(
+        `INSERT INTO cursos (${fields.join(', ')}) VALUES (${placeholders})`,
+        values,
+      );
+
+      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [result.insertId]);
+      resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(
-        e.message || 'Invalid input',
-        e.status || 405,
-      ));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
     }
   },
 );
