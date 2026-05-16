@@ -590,10 +590,11 @@ paths:
           type: string
         style: form
       - description: Filtrar por etiquetas separadas por comas
-        explode: true
+        explode: false
         in: query
         name: etiquetas
         required: false
+        allowReserved: true
         schema:
           example: "informatica,programacion"
           type: string

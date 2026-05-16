@@ -2,6 +2,22 @@
 const pool = require('./db');
 const Service = require('./Service');
 
+const formatOferta = async (oferta) => {
+  const [etiquetaRows] = await pool.query(
+    `SELECT e.nombre FROM etiqueta e
+     INNER JOIN oferta_etiqueta oe ON e.id = oe.id_etiqueta
+     WHERE oe.id_oferta = ?`,
+    [oferta.id],
+  );
+  return {
+    ...oferta,
+    etiquetas: etiquetaRows.map((r) => r.nombre),
+    fecha_publicacion: oferta.fecha_publicacion instanceof Date
+      ? oferta.fecha_publicacion.toISOString().split('T')[0]
+      : oferta.fecha_publicacion,
+  };
+};
+
 const filterMap = {
   estado: 'o.estado',
   cif_empresa: 'o.cif_empresa',
@@ -52,7 +68,8 @@ const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cif_empresa, 
       const query = `SELECT o.* FROM oferta o ${filter.join} ${filter.clause} ${filter.groupBy} ORDER BY o.fecha_publicacion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
-      resolve(Service.successResponse(rows));
+      const formatted = await Promise.all(rows.map(formatOferta));
+      resolve(Service.successResponse(formatted));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
@@ -80,7 +97,7 @@ const ofertasIdGET = ({ id }) => new Promise(
       if (!rows.length) {
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
-      resolve(Service.successResponse(rows[0]));
+      resolve(Service.successResponse(await formatOferta(rows[0])));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
@@ -107,7 +124,7 @@ const ofertasIdPUT = ({ id, ofertaInput, body }) => new Promise(
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
 
-      resolve(Service.successResponse(rows[0]));
+      resolve(Service.successResponse(await formatOferta(rows[0])));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
@@ -160,7 +177,7 @@ const ofertasPOST = ({ ofertaInput, body }) => new Promise(
       }
 
       const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [insertId]);
-      resolve(Service.successResponse(rows[0]));
+      resolve(Service.successResponse(await formatOferta(rows[0])));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
