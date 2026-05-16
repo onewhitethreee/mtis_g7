@@ -92,16 +92,17 @@ const cursosIdGET = ({ id }) => new Promise(
   },
 );
 
-const cursosIdPUT = ({ id, cursoInput }) => new Promise(
+const cursosIdPUT = ({ id, cursoInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = cursoInput && Object.keys(cursoInput).filter((k) => cursoInput[k] !== undefined && cursoInput[k] !== null);
+      const data = cursoInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('No hay datos para actualizar', 400));
       }
 
       const setClause = fields.map((field) => `${field} = ?`).join(', ');
-      const values = fields.map((field) => cursoInput[field]);
+      const values = fields.map((field) => data[field]);
       values.push(id);
 
       await pool.execute(`UPDATE curso SET ${setClause} WHERE id = ?`, values);
@@ -118,16 +119,17 @@ const cursosIdPUT = ({ id, cursoInput }) => new Promise(
   },
 );
 
-const cursosPOST = ({ cursoInput }) => new Promise(
+const cursosPOST = ({ cursoInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = cursoInput && Object.keys(cursoInput).filter((k) => cursoInput[k] !== undefined && cursoInput[k] !== null);
+      const data = cursoInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de curso inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => cursoInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO curso (${fields.join(', ')}) VALUES (${placeholders})`,

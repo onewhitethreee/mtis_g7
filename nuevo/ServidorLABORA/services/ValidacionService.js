@@ -20,10 +20,11 @@ const pool = mysql.createPool({
 * validacionCertificadoInput ValidacionCertificadoInput 
 * returns ValidacionResponse
 * */
-const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promise(
+const validacionCertificadosPOST = ({ validacionCertificadoInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const { id_usuario, tipo_certificado } = validacionCertificadoInput;
+      const data = validacionCertificadoInput || body;
+      const { id_usuario, tipo_certificado } = data;
       
       if (!id_usuario || !tipo_certificado) {
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
@@ -55,10 +56,11 @@ const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promi
 * validacionElegibilidadInput ValidacionElegibilidadInput 
 * returns ValidacionResponse
 * */
-const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Promise(
+const validacionElegibilidadPOST = ({ validacionElegibilidadInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const { id_usuario, id_oferta } = validacionElegibilidadInput;
+      const data = validacionElegibilidadInput || body;
+      const { id_usuario, id_oferta } = data;
 
       if (!id_usuario || !id_oferta) {
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
@@ -103,10 +105,11 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Prom
 * validacionEtiquetasInput ValidacionEtiquetasInput 
 * returns ValidacionResponse
 * */
-const validacionEtiquetasPOST = ({ validacionEtiquetasInput }) => new Promise(
+const validacionEtiquetasPOST = ({ validacionEtiquetasInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const { etiquetas } = validacionEtiquetasInput;
+      const data = validacionEtiquetasInput || body;
+      const { etiquetas } = data;
 
       if (!etiquetas || etiquetas.length === 0) {
         return reject(Service.rejectResponse('Etiquetas no proporcionadas', 400));
@@ -134,10 +137,11 @@ const validacionEtiquetasPOST = ({ validacionEtiquetasInput }) => new Promise(
 * validacionUsuarioInput ValidacionUsuarioInput 
 * returns ValidacionResponse
 * */
-const validacionUsuariosPOST = ({ validacionUsuarioInput }) => new Promise(
+const validacionUsuariosPOST = ({ validacionUsuarioInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const { nombre, apellidos, email, id } = validacionUsuarioInput;
+      const data = validacionUsuarioInput || body;
+      const { nombre, apellidos, email, id } = data;
 
       const errores = [];
       if (!nombre || nombre.trim() === '') errores.push('Nombre requerido');

@@ -98,16 +98,17 @@ const ofertasIdGET = ({ id }) => new Promise(
   },
 );
 
-const ofertasIdPUT = ({ id, ofertaInput }) => new Promise(
+const ofertasIdPUT = ({ id, ofertaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = ofertaInput && Object.keys(ofertaInput).filter((k) => ofertaInput[k] !== undefined && ofertaInput[k] !== null);
+      const data = ofertaInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('No hay datos para actualizar', 400));
       }
 
       const setClause = fields.map((field) => `${field} = ?`).join(', ');
-      const values = fields.map((field) => ofertaInput[field]);
+      const values = fields.map((field) => data[field]);
       values.push(id);
 
       await pool.execute(`UPDATE oferta SET ${setClause} WHERE id = ?`, values);
@@ -124,23 +125,24 @@ const ofertasIdPUT = ({ id, ofertaInput }) => new Promise(
   },
 );
 
-const ofertasPOST = ({ ofertaInput }) => new Promise(
+const ofertasPOST = ({ ofertaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = ofertaInput && Object.keys(ofertaInput).filter((k) => ofertaInput[k] !== undefined && ofertaInput[k] !== null);
+      const data = ofertaInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de oferta inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => ofertaInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO oferta (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const insertId = ofertaInput.id || result.insertId;
+      const insertId = data.id || result.insertId;
       const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {

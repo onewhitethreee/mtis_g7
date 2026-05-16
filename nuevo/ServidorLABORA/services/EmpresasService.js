@@ -67,16 +67,17 @@ const empresasCifGET = ({ cif }) => new Promise(
   },
 );
 
-const empresasCifPUT = ({ cif, empresaInput }) => new Promise(
+const empresasCifPUT = ({ cif, empresaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = empresaInput && Object.keys(empresaInput).filter((k) => empresaInput[k] !== undefined && empresaInput[k] !== null);
+      const data = empresaInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('No hay datos para actualizar', 400));
       }
 
       const setClause = fields.map((field) => `${field} = ?`).join(', ');
-      const values = fields.map((field) => empresaInput[field]);
+      const values = fields.map((field) => data[field]);
       values.push(cif);
 
       await pool.execute(`UPDATE empresa SET ${setClause} WHERE cif = ?`, values);
@@ -112,23 +113,24 @@ const empresasGET = ({ p = 1, s = 10, q, search, sector, clasificacion }) => new
   },
 );
 
-const empresasPOST = ({ empresaInput }) => new Promise(
+const empresasPOST = ({ empresaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = empresaInput && Object.keys(empresaInput).filter((k) => empresaInput[k] !== undefined && empresaInput[k] !== null);
+      const data = empresaInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de empresa inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => empresaInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO empresa (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const insertId = empresaInput.cif || result.insertId;
+      const insertId = data.cif || result.insertId;
       const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {

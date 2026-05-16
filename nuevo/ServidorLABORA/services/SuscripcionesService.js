@@ -79,16 +79,17 @@ const suscripcionesIdGET = ({ id }) => new Promise(
   },
 );
 
-const suscripcionesPOST = ({ suscripcionInput }) => new Promise(
+const suscripcionesPOST = ({ suscripcionInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = suscripcionInput && Object.keys(suscripcionInput).filter((k) => suscripcionInput[k] !== undefined && suscripcionInput[k] !== null);
+      const data = suscripcionInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de suscripción inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => suscripcionInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO suscripcion (${fields.join(', ')}) VALUES (${placeholders})`,

@@ -39,16 +39,17 @@ const notificacionesIdGET = ({ id }) => new Promise(
 * notificacionInput NotificacionInput 
 * returns Notificacion
 * */
-const notificacionesPOST = ({ notificacionInput }) => new Promise(
+const notificacionesPOST = ({ notificacionInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = notificacionInput && Object.keys(notificacionInput).filter((k) => notificacionInput[k] !== undefined && notificacionInput[k] !== null);
+      const data = notificacionInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de notificación inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => notificacionInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO notificacion (${fields.join(', ')}) VALUES (${placeholders})`,

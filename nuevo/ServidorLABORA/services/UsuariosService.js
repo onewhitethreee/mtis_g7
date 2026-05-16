@@ -86,16 +86,17 @@ const usuariosIdGET = ({ id }) => new Promise(
   },
 );
 
-const usuariosIdPUT = ({ id, usuarioInput }) => new Promise(
+const usuariosIdPUT = ({ id, usuarioInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = usuarioInput && Object.keys(usuarioInput).filter((k) => usuarioInput[k] !== undefined && usuarioInput[k] !== null);
+      const data = usuarioInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('No hay datos para actualizar', 400));
       }
 
       const setClause = fields.map((field) => `${field} = ?`).join(', ');
-      const values = fields.map((field) => usuarioInput[field]);
+      const values = fields.map((field) => data[field]);
       values.push(id);
 
       await pool.execute(`UPDATE usuario SET ${setClause} WHERE id_nie = ?`, values);
@@ -112,23 +113,24 @@ const usuariosIdPUT = ({ id, usuarioInput }) => new Promise(
   },
 );
 
-const usuariosPOST = ({ usuarioInput }) => new Promise(
+const usuariosPOST = ({ usuarioInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const fields = usuarioInput && Object.keys(usuarioInput).filter((k) => usuarioInput[k] !== undefined && usuarioInput[k] !== null);
+      const data = usuarioInput || body;
+      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields || !fields.length) {
         return reject(Service.rejectResponse('Datos de usuario inválidos', 400));
       }
 
       const placeholders = fields.map(() => '?').join(', ');
-      const values = fields.map((field) => usuarioInput[field]);
+      const values = fields.map((field) => data[field]);
 
       const [result] = await pool.execute(
         `INSERT INTO usuario (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const insertId = usuarioInput.id_nie || result.insertId;
+      const insertId = data.id_nie || result.insertId;
       const [rows] = await pool.query('SELECT * FROM usuario WHERE id_nie = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
