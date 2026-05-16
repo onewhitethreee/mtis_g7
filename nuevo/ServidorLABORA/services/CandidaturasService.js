@@ -42,7 +42,7 @@ const candidaturasGET = ({ p = 1, s = 10, idUnderscoreoferta, idUnderscorecandid
       const offset = (page - 1) * size;
 
       const filter = buildFilterClause({ idUnderscoreoferta, idUnderscorecandidato, estado });
-      const query = `SELECT * FROM candidaturas ${filter.clause} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM candidatura ${filter.clause} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -55,7 +55,7 @@ const candidaturasGET = ({ p = 1, s = 10, idUnderscoreoferta, idUnderscorecandid
 const candidaturasIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM candidaturas WHERE id = ?', [id]);
+      const [result] = await pool.execute('DELETE FROM candidatura WHERE id = ?', [id]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Candidatura no encontrada', 404));
       }
@@ -69,7 +69,7 @@ const candidaturasIdDELETE = ({ id }) => new Promise(
 const candidaturasIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM candidatura WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Candidatura no encontrada', 404));
       }
@@ -92,8 +92,8 @@ const candidaturasIdPUT = ({ id, candidaturaInput }) => new Promise(
       const values = fields.map((field) => candidaturaInput[field]);
       values.push(id);
 
-      await pool.execute(`UPDATE candidaturas SET ${setClause} WHERE id = ?`, values);
-      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [id]);
+      await pool.execute(`UPDATE candidatura SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM candidatura WHERE id = ?', [id]);
 
       if (!rows.length) {
         return reject(Service.rejectResponse('Candidatura no encontrada', 404));
@@ -122,7 +122,7 @@ const candidaturasPOST = ({ candidaturaInput }) => new Promise(
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM candidaturas WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM candidatura WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
