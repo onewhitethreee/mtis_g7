@@ -55,7 +55,7 @@ const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cifUnderscore
       const order = q === 'desc' ? 'DESC' : 'ASC';
 
       const filter = buildFilterClause({ search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato });
-      const query = `SELECT * FROM ofertas ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM oferta ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -68,7 +68,7 @@ const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cifUnderscore
 const ofertasIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM ofertas WHERE id = ?', [id]);
+      const [result] = await pool.execute('DELETE FROM oferta WHERE id = ?', [id]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
@@ -82,7 +82,7 @@ const ofertasIdDELETE = ({ id }) => new Promise(
 const ofertasIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
@@ -105,8 +105,8 @@ const ofertasIdPUT = ({ id, ofertaInput }) => new Promise(
       const values = fields.map((field) => ofertaInput[field]);
       values.push(id);
 
-      await pool.execute(`UPDATE ofertas SET ${setClause} WHERE id = ?`, values);
-      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id]);
+      await pool.execute(`UPDATE oferta SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [id]);
 
       if (!rows.length) {
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
@@ -131,11 +131,11 @@ const ofertasPOST = ({ ofertaInput }) => new Promise(
       const values = fields.map((field) => ofertaInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO ofertas (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO oferta (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

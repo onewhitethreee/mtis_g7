@@ -22,7 +22,7 @@ const pool = mysql.createPool({
 const notificacionesIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM notificaciones WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM notificacion WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Notificación no encontrada', 404));
       }
@@ -51,11 +51,11 @@ const notificacionesPOST = ({ notificacionInput }) => new Promise(
       const values = fields.map((field) => notificacionInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO notificaciones (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO notificacion (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM notificaciones WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM notificacion WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

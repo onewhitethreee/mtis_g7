@@ -41,7 +41,7 @@ const suscripcionesGET = ({ p = 1, s = 10, idUnderscoreusuario, tipo }) => new P
       const offset = (page - 1) * size;
 
       const filter = buildFilterClause({ idUnderscoreusuario, tipo });
-      const query = `SELECT * FROM suscripciones ${filter.clause} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM suscripcion ${filter.clause} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -54,7 +54,7 @@ const suscripcionesGET = ({ p = 1, s = 10, idUnderscoreusuario, tipo }) => new P
 const suscripcionesIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM suscripciones WHERE id = ?', [id]);
+      const [result] = await pool.execute('DELETE FROM suscripcion WHERE id = ?', [id]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Suscripción no encontrada', 404));
       }
@@ -68,7 +68,7 @@ const suscripcionesIdDELETE = ({ id }) => new Promise(
 const suscripcionesIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM suscripciones WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM suscripcion WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Suscripción no encontrada', 404));
       }
@@ -91,11 +91,11 @@ const suscripcionesPOST = ({ suscripcionInput }) => new Promise(
       const values = fields.map((field) => suscripcionInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO suscripciones (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO suscripcion (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM suscripciones WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM suscripcion WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

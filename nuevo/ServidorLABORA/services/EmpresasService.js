@@ -42,7 +42,7 @@ const buildFilterClause = (filters) => {
 const empresasCifDELETE = ({ cif }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM empresas WHERE cif = ?', [cif]);
+      const [result] = await pool.execute('DELETE FROM empresa WHERE cif = ?', [cif]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Empresa no encontrada', 404));
       }
@@ -56,7 +56,7 @@ const empresasCifDELETE = ({ cif }) => new Promise(
 const empresasCifGET = ({ cif }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM empresas WHERE cif = ?', [cif]);
+      const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [cif]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Empresa no encontrada', 404));
       }
@@ -79,8 +79,8 @@ const empresasCifPUT = ({ cif, empresaInput }) => new Promise(
       const values = fields.map((field) => empresaInput[field]);
       values.push(cif);
 
-      await pool.execute(`UPDATE empresas SET ${setClause} WHERE cif = ?`, values);
-      const [rows] = await pool.query('SELECT * FROM empresas WHERE cif = ?', [cif]);
+      await pool.execute(`UPDATE empresa SET ${setClause} WHERE cif = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [cif]);
 
       if (!rows.length) {
         return reject(Service.rejectResponse('Empresa no encontrada', 404));
@@ -102,7 +102,7 @@ const empresasGET = ({ p = 1, s = 10, q, search, sector, clasificacion }) => new
       const order = q === 'desc' ? 'DESC' : 'ASC';
 
       const filter = buildFilterClause({ search, sector, clasificacion });
-      const query = `SELECT * FROM empresas ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM empresa ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -124,11 +124,11 @@ const empresasPOST = ({ empresaInput }) => new Promise(
       const values = fields.map((field) => empresaInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO empresas (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO empresa (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM empresas WHERE cif = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

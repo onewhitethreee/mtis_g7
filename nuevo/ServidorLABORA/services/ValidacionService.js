@@ -29,12 +29,12 @@ const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promi
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
       }
 
-      const [usuario] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id_usuario]);
+      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id_usuario]);
       if (!usuario.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
 
-      const [certificado] = await pool.query('SELECT * FROM certificados WHERE tipo = ?', [tipo_certificado]);
+      const [certificado] = await pool.query('SELECT * FROM certificado WHERE tipo = ?', [tipo_certificado]);
       if (!certificado.length) {
         return reject(Service.rejectResponse('Tipo de certificado no válido', 400));
       }
@@ -64,12 +64,12 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Prom
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
       }
 
-      const [usuario] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id_usuario]);
+      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id_usuario]);
       if (!usuario.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
 
-      const [oferta] = await pool.query('SELECT * FROM ofertas WHERE id = ?', [id_oferta]);
+      const [oferta] = await pool.query('SELECT * FROM oferta WHERE id = ?', [id_oferta]);
       if (!oferta.length) {
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
@@ -106,7 +106,7 @@ const validacionEtiquetasPOST = ({ validacionEtiquetasInput }) => new Promise(
 
       const etiquetasArray = Array.isArray(etiquetas) ? etiquetas : etiquetas.split(',');
       const placeholders = etiquetasArray.map(() => '?').join(',');
-      const [rows] = await pool.query(`SELECT * FROM etiquetas WHERE nombre IN (${placeholders})`, etiquetasArray);
+      const [rows] = await pool.query(`SELECT * FROM etiqueta WHERE nombre IN (${placeholders})`, etiquetasArray);
 
       const etiquetasValidas = rows.length === etiquetasArray.length;
 
@@ -141,7 +141,7 @@ const validacionUsuariosPOST = ({ validacionUsuarioInput }) => new Promise(
         return reject(Service.rejectResponse(errores.join(', '), 400));
       }
 
-      const [usuarioExistente] = await pool.query('SELECT * FROM usuarios WHERE id = ? OR email = ?', [id, email]);
+      const [usuarioExistente] = await pool.query('SELECT * FROM usuario WHERE id = ? OR email = ?', [id, email]);
       if (usuarioExistente.length > 0) {
         return reject(Service.rejectResponse('Usuario o email ya existe', 400));
       }

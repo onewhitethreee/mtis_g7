@@ -118,7 +118,7 @@ const candidaturasPOST = ({ candidaturaInput }) => new Promise(
       const values = fields.map((field) => candidaturaInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO candidaturas (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO candidatura (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 

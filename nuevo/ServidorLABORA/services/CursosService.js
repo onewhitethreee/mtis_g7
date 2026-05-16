@@ -41,7 +41,7 @@ const cursosGET = ({ p = 1, s = 10, estado, etiqueta }) => new Promise(
       const offset = (page - 1) * size;
 
       const filter = buildFilterClause({ estado, etiqueta });
-      const query = `SELECT * FROM cursos ${filter.clause} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM curso ${filter.clause} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -54,7 +54,7 @@ const cursosGET = ({ p = 1, s = 10, estado, etiqueta }) => new Promise(
 const cursosIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM cursos WHERE id = ?', [id]);
+      const [result] = await pool.execute('DELETE FROM curso WHERE id = ?', [id]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Curso no encontrado', 404));
       }
@@ -68,7 +68,7 @@ const cursosIdDELETE = ({ id }) => new Promise(
 const cursosIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM curso WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Curso no encontrado', 404));
       }
@@ -91,8 +91,8 @@ const cursosIdPUT = ({ id, cursoInput }) => new Promise(
       const values = fields.map((field) => cursoInput[field]);
       values.push(id);
 
-      await pool.execute(`UPDATE cursos SET ${setClause} WHERE id = ?`, values);
-      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [id]);
+      await pool.execute(`UPDATE curso SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM curso WHERE id = ?', [id]);
 
       if (!rows.length) {
         return reject(Service.rejectResponse('Curso no encontrado', 404));
@@ -117,11 +117,11 @@ const cursosPOST = ({ cursoInput }) => new Promise(
       const values = fields.map((field) => cursoInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO cursos (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO curso (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM cursos WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM curso WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

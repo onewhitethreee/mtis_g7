@@ -48,7 +48,7 @@ const usuariosGET = ({ p = 1, s = 10, q, search, tipo, activo }) => new Promise(
       const order = q === 'desc' ? 'DESC' : 'ASC';
 
       const filter = buildFilterClause({ search, tipo, activo });
-      const query = `SELECT * FROM usuarios ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM usuario ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -61,7 +61,7 @@ const usuariosGET = ({ p = 1, s = 10, q, search, tipo, activo }) => new Promise(
 const usuariosIdDELETE = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [result] = await pool.execute('DELETE FROM usuarios WHERE id = ?', [id]);
+      const [result] = await pool.execute('DELETE FROM usuario WHERE id = ?', [id]);
       if (result.affectedRows === 0) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
@@ -75,7 +75,7 @@ const usuariosIdDELETE = ({ id }) => new Promise(
 const usuariosIdGET = ({ id }) => new Promise(
   async (resolve, reject) => {
     try {
-      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id]);
+      const [rows] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id]);
       if (!rows.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
@@ -98,8 +98,8 @@ const usuariosIdPUT = ({ id, usuarioInput }) => new Promise(
       const values = fields.map((field) => usuarioInput[field]);
       values.push(id);
 
-      await pool.execute(`UPDATE usuarios SET ${setClause} WHERE id = ?`, values);
-      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [id]);
+      await pool.execute(`UPDATE usuario SET ${setClause} WHERE id = ?`, values);
+      const [rows] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id]);
 
       if (!rows.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
@@ -124,11 +124,11 @@ const usuariosPOST = ({ usuarioInput }) => new Promise(
       const values = fields.map((field) => usuarioInput[field]);
 
       const [result] = await pool.execute(
-        `INSERT INTO usuarios (${fields.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO usuario (${fields.join(', ')}) VALUES (${placeholders})`,
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM usuarios WHERE id = ?', [result.insertId]);
+      const [rows] = await pool.query('SELECT * FROM usuario WHERE id = ?', [result.insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
