@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+const crypto = require('crypto');
 const pool = require('./db');
 const Service = require('./Service');
 
@@ -105,9 +106,19 @@ const usuariosIdPUT = ({ id, usuarioInput, body }) => new Promise(
 const usuariosPOST = ({ usuarioInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const data = usuarioInput || body;
-      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
-      if (!fields || !fields.length) {
+      const raw = usuarioInput || body;
+      if (!raw || !Object.keys(raw).length) {
+        return reject(Service.rejectResponse('Datos de usuario inválidos', 400));
+      }
+
+      const data = { ...raw };
+      if (data.contrasena) {
+        data.contrasena_hash = crypto.createHash('sha256').update(data.contrasena).digest('hex');
+        delete data.contrasena;
+      }
+
+      const fields = Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
+      if (!fields.length) {
         return reject(Service.rejectResponse('Datos de usuario inválidos', 400));
       }
 

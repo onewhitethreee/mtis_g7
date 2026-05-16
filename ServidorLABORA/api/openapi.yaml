@@ -1876,6 +1876,7 @@ components:
         nombre: María
         email: maria.garcia@email.com
         activo: true
+        contrasena: miContraseña123
       properties:
         id_nie:
           description: NIF o NIE del usuario (identificador único)
@@ -1901,8 +1902,14 @@ components:
         activo:
           default: true
           type: boolean
+        contrasena:
+          description: Contraseña en texto plano (se almacenará hasheada)
+          example: miContraseña123
+          type: string
+          minLength: 6
       required:
       - apellidos
+      - contrasena
       - email
       - id_nie
       - nombre
