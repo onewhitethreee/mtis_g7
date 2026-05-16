@@ -107,17 +107,33 @@ const ofertasIdGET = ({ id }) => new Promise(
 const ofertasIdPUT = ({ id, ofertaInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const data = ofertaInput || body;
-      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
-      if (!fields || !fields.length) {
+      const raw = ofertaInput || body;
+      const { etiquetas, ...data } = raw || {};
+      const fields = Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
+      if (!fields.length && !etiquetas) {
         return reject(Service.rejectResponse('No hay datos para actualizar', 400));
       }
 
-      const setClause = fields.map((field) => `${field} = ?`).join(', ');
-      const values = fields.map((field) => data[field]);
-      values.push(id);
+      if (fields.length) {
+        const setClause = fields.map((field) => `${field} = ?`).join(', ');
+        const values = fields.map((field) => data[field]);
+        values.push(id);
+        await pool.execute(`UPDATE oferta SET ${setClause} WHERE id = ?`, values);
+      }
 
-      await pool.execute(`UPDATE oferta SET ${setClause} WHERE id = ?`, values);
+      if (etiquetas) {
+        await pool.execute('DELETE FROM oferta_etiqueta WHERE id_oferta = ?', [id]);
+        if (etiquetas.length) {
+          const [etiquetaRows] = await pool.query(
+            `SELECT id FROM etiqueta WHERE nombre IN (${etiquetas.map(() => '?').join(',')})`,
+            etiquetas,
+          );
+          if (etiquetaRows.length) {
+            const etiquetaValues = etiquetaRows.map((e) => [id, e.id]);
+            await pool.query('INSERT INTO oferta_etiqueta (id_oferta, id_etiqueta) VALUES ?', [etiquetaValues]);
+          }
+        }
+      }
       const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [id]);
 
       if (!rows.length) {
