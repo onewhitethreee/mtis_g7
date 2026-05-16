@@ -248,7 +248,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/UsuarioInput"
+              $ref: "#/components/schemas/UsuarioUpdateInput"
         required: true
       responses:
         "200":
@@ -506,7 +506,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EmpresaInput"
+              $ref: "#/components/schemas/EmpresaUpdateInput"
         required: true
       responses:
         "200":
@@ -787,7 +787,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/OfertaInput"
+              $ref: "#/components/schemas/OfertaUpdateInput"
         required: true
       responses:
         "200":
@@ -1016,7 +1016,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CursoInput"
+              $ref: "#/components/schemas/CursoUpdateInput"
         required: true
       responses:
         "200":
@@ -1263,7 +1263,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CandidaturaInput"
+              $ref: "#/components/schemas/CandidaturaUpdateInput"
         required: true
       responses:
         "200":
@@ -1908,6 +1908,34 @@ components:
       - nombre
       - tipo
       type: object
+    UsuarioUpdateInput:
+      description: Datos opcionales para actualizar un usuario
+      properties:
+        id_nie:
+          description: NIF o NIE del usuario (identificador único)
+          example: 12345678A
+          type: string
+        nombre:
+          example: María
+          type: string
+        apellidos:
+          example: García López
+          type: string
+        email:
+          example: maria.garcia@email.com
+          format: email
+          type: string
+        tipo:
+          enum:
+          - DEMANDANTE
+          - REPRESENTANTE
+          - ADMINISTRADOR
+          example: DEMANDANTE
+          type: string
+        activo:
+          default: true
+          type: boolean
+      type: object
     Usuario:
       allOf:
       - $ref: "#/components/schemas/UsuarioInput"
@@ -2000,6 +2028,41 @@ components:
       - razon_social
       - sector
       - telefono
+      type: object
+    EmpresaUpdateInput:
+      description: Datos opcionales para actualizar una empresa
+      properties:
+        cif:
+          example: B12345678
+          type: string
+        nombre:
+          example: TechSolutions SL
+          type: string
+        razon_social:
+          example: TechSolutions Sociedad Limitada
+          type: string
+        correo:
+          example: contacto@techsolutions.es
+          format: email
+          type: string
+        telefono:
+          example: "965123456"
+          type: string
+        fecha_constitucion:
+          example: 2010-03-15
+          format: date
+          type: string
+        sector:
+          example: Tecnología
+          type: string
+        clasificacion:
+          enum:
+          - MICRO
+          - PEQUEÑA
+          - MEDIANA
+          - GRANDE
+          example: PEQUEÑA
+          type: string
       type: object
     Empresa:
       allOf:
@@ -2105,6 +2168,47 @@ components:
       - etiquetas
       - titulo
       type: object
+    OfertaUpdateInput:
+      description: Datos opcionales para actualizar una oferta
+      properties:
+        cif_empresa:
+          example: B12345678
+          type: string
+        titulo:
+          example: Desarrollador Full Stack
+          type: string
+        descripcion:
+          example: Buscamos desarrollador con experiencia en React y Node.js
+          type: string
+        duracion_contrato:
+          enum:
+          - INDEFINIDO
+          - TEMPORAL
+          - ALTERNANCIA
+          - PRACTICAS
+          example: INDEFINIDO
+          type: string
+        estado:
+          default: ACTIVA
+          enum:
+          - ACTIVA
+          - CERRADA
+          - PAUSADA
+          example: ACTIVA
+          type: string
+        etiquetas:
+          example:
+          - informatica
+          - programacion
+          - fullstack
+          items:
+            type: string
+          type: array
+        fecha_publicacion:
+          example: 2026-05-14
+          format: date
+          type: string
+      type: object
     Oferta:
       allOf:
       - $ref: "#/components/schemas/OfertaInput"
@@ -2203,6 +2307,31 @@ components:
       - fecha_inicio
       - titulo
       type: object
+    CursoUpdateInput:
+      description: Datos opcionales para actualizar un curso
+      properties:
+        titulo:
+          example: Introducción a la programación
+          type: string
+        descripcion:
+          example: Curso básico de programación orientado a desempleados
+          type: string
+        fecha_inicio:
+          example: 2026-05-14
+          format: date
+          type: string
+        fecha_fin:
+          example: 2026-12-31
+          format: date
+          type: string
+        etiquetas:
+          example:
+          - informatica
+          - programacion
+          items:
+            type: string
+          type: array
+      type: object
     Curso:
       allOf:
       - $ref: "#/components/schemas/CursoInput"
@@ -2299,6 +2428,33 @@ components:
       required:
       - id_candidato
       - id_oferta
+      type: object
+    CandidaturaUpdateInput:
+      description: Datos opcionales para actualizar una candidatura
+      properties:
+        id_candidato:
+          description: NIF/NIE del demandante candidato
+          example: 12345678A
+          type: string
+        id_oferta:
+          description: Identificador de la oferta a la que se aplica
+          example: OFE-2026-001
+          type: string
+        estado:
+          default: PENDIENTE
+          description: Estado de la candidatura
+          enum:
+          - PENDIENTE
+          - PRESELECCIONADO
+          - RECHAZADO
+          - ACEPTADO
+          example: PENDIENTE
+          type: string
+        fecha_aplicacion:
+          description: Fecha en la que se registra la candidatura
+          example: 2026-05-14
+          format: date
+          type: string
       type: object
     Candidatura:
       allOf:

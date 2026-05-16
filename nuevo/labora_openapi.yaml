@@ -128,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsuarioInput'
+              $ref: '#/components/schemas/UsuarioUpdateInput'
       responses:
         '200':
           description: Usuario modificado correctamente
@@ -258,7 +258,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmpresaInput'
+              $ref: '#/components/schemas/EmpresaUpdateInput'
       responses:
         '200':
           description: Empresa modificada correctamente
@@ -400,7 +400,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OfertaInput'
+              $ref: '#/components/schemas/OfertaUpdateInput'
       responses:
         '200':
           description: Oferta modificada correctamente
@@ -516,7 +516,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CursoInput'
+              $ref: '#/components/schemas/CursoUpdateInput'
       responses:
         '200':
           description: Curso modificado correctamente
@@ -645,7 +645,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CandidaturaInput'
+              $ref: '#/components/schemas/CandidaturaUpdateInput'
       responses:
         '200':
           description: Candidatura modificada correctamente
@@ -1108,6 +1108,32 @@ components:
           type: boolean
           default: true
 
+    UsuarioUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar un usuario
+      properties:
+        id_nie:
+          type: string
+          description: NIF o NIE del usuario (identificador único)
+          example: "12345678A"
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "García López"
+        email:
+          type: string
+          format: email
+          example: "maria.garcia@email.com"
+        tipo:
+          type: string
+          enum: [DEMANDANTE, REPRESENTANTE, ADMINISTRADOR]
+          example: "DEMANDANTE"
+        activo:
+          type: boolean
+          default: true
+
     Usuario:
       allOf:
         - $ref: '#/components/schemas/UsuarioInput'
@@ -1141,6 +1167,38 @@ components:
         - fecha_constitucion
         - sector
         - clasificacion
+      properties:
+        cif:
+          type: string
+          example: "B12345678"
+        nombre:
+          type: string
+          example: "TechSolutions SL"
+        razon_social:
+          type: string
+          example: "TechSolutions Sociedad Limitada"
+        correo:
+          type: string
+          format: email
+          example: "contacto@techsolutions.es"
+        telefono:
+          type: string
+          example: "965123456"
+        fecha_constitucion:
+          type: string
+          format: date
+          example: "2010-03-15"
+        sector:
+          type: string
+          example: "Tecnología"
+        clasificacion:
+          type: string
+          enum: [MICRO, PEQUEÑA, MEDIANA, GRANDE]
+          example: "PEQUEÑA"
+
+    EmpresaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una empresa
       properties:
         cif:
           type: string
@@ -1229,6 +1287,38 @@ components:
           format: date
           example: "2026-05-14"
 
+    OfertaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una oferta
+      properties:
+        cif_empresa:
+          type: string
+          example: "B12345678"
+        titulo:
+          type: string
+          example: "Desarrollador Full Stack"
+        descripcion:
+          type: string
+          example: "Buscamos desarrollador con experiencia en React y Node.js"
+        duracion_contrato:
+          type: string
+          enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+          example: "INDEFINIDO"
+        estado:
+          type: string
+          enum: [ACTIVA, CERRADA, PAUSADA]
+          default: ACTIVA
+          example: "ACTIVA"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion", "fullstack"]
+        fecha_publicacion:
+          type: string
+          format: date
+          example: "2026-05-14"
+
     Oferta:
       allOf:
         - $ref: '#/components/schemas/OfertaInput'
@@ -1261,6 +1351,30 @@ components:
         - descripcion
         - fecha_inicio
         - fecha_fin
+      properties:
+        titulo:
+          type: string
+          example: "Introducción a la programación"
+        descripcion:
+          type: string
+          example: "Curso básico de programación orientado a desempleados"
+        fecha_inicio:
+          type: string
+          format: date
+          example: "2026-05-14"
+        fecha_fin:
+          type: string
+          format: date
+          example: "2026-12-31"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion"]
+
+    CursoUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar un curso
       properties:
         titulo:
           type: string
@@ -1317,6 +1431,30 @@ components:
       required:
         - id_candidato
         - id_oferta
+      properties:
+        id_candidato:
+          type: string
+          description: NIF/NIE del demandante candidato
+          example: "12345678A"
+        id_oferta:
+          type: string
+          description: Identificador de la oferta a la que se aplica
+          example: "OFE-2026-001"
+        estado:
+          type: string
+          description: Estado de la candidatura
+          enum: [PENDIENTE, PRESELECCIONADO, RECHAZADO, ACEPTADO]
+          default: PENDIENTE
+          example: "PENDIENTE"
+        fecha_aplicacion:
+          type: string
+          format: date
+          description: Fecha en la que se registra la candidatura
+          example: "2026-05-14"
+
+    CandidaturaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una candidatura
       properties:
         id_candidato:
           type: string
