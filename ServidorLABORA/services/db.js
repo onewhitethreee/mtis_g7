@@ -7,6 +7,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD || 'root',
   port: Number(process.env.DB_PORT) || 3306,
   database: process.env.DB_NAME || 'labora',
+  charset: 'utf8mb4',
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
