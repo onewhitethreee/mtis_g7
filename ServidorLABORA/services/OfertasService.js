@@ -123,6 +123,16 @@ const ofertasPOST = ({ ofertaInput, body }) => new Promise(
       }
 
       const { etiquetas, ...data } = raw;
+
+      if (!data.id) {
+        const year = new Date().getFullYear();
+        const [[{ count }]] = await pool.query(
+          'SELECT COUNT(*) as count FROM oferta WHERE id LIKE ?',
+          [`OFE-${year}-%`],
+        );
+        data.id = `OFE-${year}-${String(count + 1).padStart(3, '0')}`;
+      }
+
       const fields = Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
       if (!fields.length) {
         return reject(Service.rejectResponse('Datos de oferta inválidos', 400));
