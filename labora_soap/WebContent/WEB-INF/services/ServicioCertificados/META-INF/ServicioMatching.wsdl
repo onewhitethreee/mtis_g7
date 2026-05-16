@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="ServicioMatching" targetNamespace="http://www.labora.gva.es/ServicioMatching/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://www.labora.gva.es/ServicioMatching/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.labora.gva.es/ServicioMatching/">
+
+      <!-- ── Tipo complejo CandidatoMatching ── -->
+      <xsd:complexType name="CandidatoMatching">
+        <xsd:sequence>
+          <xsd:element maxOccurs="1" minOccurs="1" name="nifnie" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="nombre" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="apellidos" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="email" type="xsd:string"/>
+          <xsd:element maxOccurs="1" minOccurs="1" name="puntuacion" type="xsd:decimal"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- ── EjecutarMatching ── -->
+      <xsd:element name="EjecutarMatching">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="id_oferta" type="xsd:string"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="max_candidatos" type="xsd:int"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="puntuacion_minima" type="xsd:decimal"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="EjecutarMatchingResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="ok" type="xsd:boolean"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="mensaje" type="xsd:string"/>
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="candidatos" type="tns:CandidatoMatching"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- ── ObtenerCandidatos ── -->
+      <xsd:element name="ObtenerCandidatos">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="id_oferta" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ObtenerCandidatosResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element maxOccurs="1" minOccurs="1" name="ok" type="xsd:boolean"/>
+            <xsd:element maxOccurs="1" minOccurs="0" name="mensaje" type="xsd:string"/>
+            <xsd:element maxOccurs="unbounded" minOccurs="0" name="candidatos" type="tns:CandidatoMatching"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="EjecutarMatchingResponse">
+    <wsdl:part name="parameters" element="tns:EjecutarMatchingResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ObtenerCandidatosResponse">
+    <wsdl:part name="parameters" element="tns:ObtenerCandidatosResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ObtenerCandidatosRequest">
+    <wsdl:part name="parameters" element="tns:ObtenerCandidatos">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="EjecutarMatchingRequest">
+    <wsdl:part name="parameters" element="tns:EjecutarMatching">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ServicioMatching">
+    <wsdl:operation name="EjecutarMatching">
+      <wsdl:input message="tns:EjecutarMatchingRequest">
+    </wsdl:input>
+      <wsdl:output message="tns:EjecutarMatchingResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ObtenerCandidatos">
+      <wsdl:input message="tns:ObtenerCandidatosRequest">
+    </wsdl:input>
+      <wsdl:output message="tns:ObtenerCandidatosResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="ServicioMatching" type="tns:ServicioMatching">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="EjecutarMatching">
+      <soap:operation soapAction="http://www.labora.gva.es/ServicioMatching/EjecutarMatching"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="ObtenerCandidatos">
+      <soap:operation soapAction="http://www.labora.gva.es/ServicioMatching/ObtenerCandidatos"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="ServicioMatching">
+    <wsdl:port name="ServicioMatching" binding="tns:ServicioMatching">
+      <soap:address location="http://localhost:9098/ServicioMatching"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

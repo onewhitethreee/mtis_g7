@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- This file was auto-generated from WSDL --><!-- by the Apache Axis2 version: 1.6.3  Built on : Jun 27, 2015 (11:17:49 BST) --><serviceGroup>
+    <service name="ServicioIdentidad">
+        <messageReceivers>
+            <messageReceiver mep="http://www.w3.org/ns/wsdl/in-out" class="es.gva.labora.www.servicioidentidad.ServicioIdentidadMessageReceiverInOut"/>
+        </messageReceivers>
+        <parameter name="ServiceClass">es.gva.labora.www.servicioidentidad.ServicioIdentidadSkeleton</parameter>
+        <parameter name="useOriginalwsdl">true</parameter>
+        <parameter name="modifyUserWSDLPortAddress">true</parameter>
+        <operation name="VerificarPrivilegios" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://www.labora.gva.es/ServicioIdentidad/">
+            <actionMapping>http://www.labora.gva.es/ServicioIdentidad/VerificarPrivilegios</actionMapping>
+            <outputActionMapping>http://www.labora.gva.es/ServicioIdentidad/ServicioIdentidad/VerificarPrivilegiosResponse</outputActionMapping>
+        </operation>
+        <operation name="AutenticarUsuario" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://www.labora.gva.es/ServicioIdentidad/">
+            <actionMapping>http://www.labora.gva.es/ServicioIdentidad/AutenticarUsuario</actionMapping>
+            <outputActionMapping>http://www.labora.gva.es/ServicioIdentidad/ServicioIdentidad/AutenticarUsuarioResponse</outputActionMapping>
+        </operation>
+        <operation name="CrearContrasena" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://www.labora.gva.es/ServicioIdentidad/">
+            <actionMapping>http://www.labora.gva.es/ServicioIdentidad/CrearContrasena</actionMapping>
+            <outputActionMapping>http://www.labora.gva.es/ServicioIdentidad/ServicioIdentidad/CrearContrasenaResponse</outputActionMapping>
+        </operation>
+    </service>
+</serviceGroup>

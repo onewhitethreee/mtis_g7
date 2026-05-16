@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><!-- This file was auto-generated from WSDL --><!-- by the Apache Axis2 version: 1.6.3  Built on : Jun 27, 2015 (11:17:49 BST) --><serviceGroup>
+    <service name="ServicioMatching">
+        <messageReceivers>
+            <messageReceiver mep="http://www.w3.org/ns/wsdl/in-out" class="es.gva.labora.www.serviciomatching.ServicioMatchingMessageReceiverInOut"/>
+        </messageReceivers>
+        <parameter name="ServiceClass">es.gva.labora.www.serviciomatching.ServicioMatchingSkeleton</parameter>
+        <parameter name="useOriginalwsdl">true</parameter>
+        <parameter name="modifyUserWSDLPortAddress">true</parameter>
+        <operation name="ObtenerCandidatos" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://www.labora.gva.es/ServicioMatching/">
+            <actionMapping>http://www.labora.gva.es/ServicioMatching/ObtenerCandidatos</actionMapping>
+            <outputActionMapping>http://www.labora.gva.es/ServicioMatching/ServicioMatching/ObtenerCandidatosResponse</outputActionMapping>
+        </operation>
+        <operation name="EjecutarMatching" mep="http://www.w3.org/ns/wsdl/in-out" namespace="http://www.labora.gva.es/ServicioMatching/">
+            <actionMapping>http://www.labora.gva.es/ServicioMatching/EjecutarMatching</actionMapping>
+            <outputActionMapping>http://www.labora.gva.es/ServicioMatching/ServicioMatching/EjecutarMatchingResponse</outputActionMapping>
+        </operation>
+    </service>
+</serviceGroup>
