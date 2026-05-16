@@ -2,6 +2,22 @@
 const pool = require('./db');
 const Service = require('./Service');
 
+const formatSuscripcion = async (suscripcion) => {
+  const [etiquetaRows] = await pool.query(
+    `SELECT e.nombre FROM etiqueta e
+     INNER JOIN suscripcion_etiqueta se ON e.id = se.id_etiqueta
+     WHERE se.id_suscripcion = ?`,
+    [suscripcion.id],
+  );
+  return {
+    ...suscripcion,
+    etiquetas: etiquetaRows.map((r) => r.nombre),
+    fecha_suscripcion: suscripcion.fecha_suscripcion instanceof Date
+      ? suscripcion.fecha_suscripcion.toISOString().split('T')[0]
+      : suscripcion.fecha_suscripcion,
+  };
+};
+
 const filterMap = {
   id_usuario: 'id_usuario',
   tipo: 'tipo',
@@ -33,7 +49,8 @@ const suscripcionesGET = ({ p = 1, s = 10, id_usuario, tipo }) => new Promise(
       const query = `SELECT * FROM suscripcion ${filter.clause} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
-      resolve(Service.successResponse(rows));
+      const formatted = await Promise.all(rows.map(formatSuscripcion));
+      resolve(Service.successResponse(formatted));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
@@ -61,7 +78,7 @@ const suscripcionesIdGET = ({ id }) => new Promise(
       if (!rows.length) {
         return reject(Service.rejectResponse('Suscripción no encontrada', 404));
       }
-      resolve(Service.successResponse(rows[0]));
+      resolve(Service.successResponse(await formatSuscripcion(rows[0])));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
@@ -71,9 +88,14 @@ const suscripcionesIdGET = ({ id }) => new Promise(
 const suscripcionesPOST = ({ suscripcionInput, body }) => new Promise(
   async (resolve, reject) => {
     try {
-      const data = suscripcionInput || body;
-      const fields = data && Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
-      if (!fields || !fields.length) {
+      const raw = suscripcionInput || body;
+      if (!raw || !Object.keys(raw).length) {
+        return reject(Service.rejectResponse('Datos de suscripción inválidos', 400));
+      }
+
+      const { etiquetas, ...data } = raw;
+      const fields = Object.keys(data).filter((k) => data[k] !== undefined && data[k] !== null);
+      if (!fields.length) {
         return reject(Service.rejectResponse('Datos de suscripción inválidos', 400));
       }
 
@@ -85,8 +107,21 @@ const suscripcionesPOST = ({ suscripcionInput, body }) => new Promise(
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM suscripcion WHERE id = ?', [result.insertId]);
-      resolve(Service.successResponse(rows[0]));
+      const insertId = result.insertId;
+
+      if (etiquetas && etiquetas.length) {
+        const [etiquetaRows] = await pool.query(
+          `SELECT id FROM etiqueta WHERE nombre IN (${etiquetas.map(() => '?').join(',')})`,
+          etiquetas,
+        );
+        if (etiquetaRows.length) {
+          const etiquetaValues = etiquetaRows.map((e) => [insertId, e.id]);
+          await pool.query('INSERT INTO suscripcion_etiqueta (id_suscripcion, id_etiqueta) VALUES ?', [etiquetaValues]);
+        }
+      }
+
+      const [rows] = await pool.query('SELECT * FROM suscripcion WHERE id = ?', [insertId]);
+      resolve(Service.successResponse(await formatSuscripcion(rows[0])));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
