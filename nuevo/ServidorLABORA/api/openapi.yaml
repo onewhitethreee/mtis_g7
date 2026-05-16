@@ -1,0 +1,2607 @@
+openapi: 3.0.3
+info:
+  description: |
+    Contrato REST unificado del sistema LABORA (Servicio Público de Empleo de la Comunitat Valenciana). Incluye la gestión de usuarios, empresas, ofertas de trabajo, cursos de formación, candidaturas, suscripciones, validaciones y notificaciones.
+  title: LABORA - API de Integración
+  version: "1.0"
+servers:
+- url: /
+tags:
+- description: Gestión de usuarios demandantes de empleo
+  name: usuarios
+- description: Gestión de empresas registradas en el sistema
+  name: empresas
+- description: Gestión de ofertas de trabajo publicadas por empresas
+  name: ofertas
+- description: Gestión de cursos de formación de la plataforma LABORA
+  name: cursos
+- description: Gestión de candidaturas de demandantes a ofertas de trabajo
+  name: candidaturas
+- description: Gestión de suscripciones de demandantes a ofertas y cursos por etiquetas
+  name: suscripciones
+- description: "Validación de datos de usuarios, certificados, etiquetas y elegibilidad"
+  name: validacion
+- description: Envío y consulta de notificaciones a usuarios y empresas
+  name: notificaciones
+paths:
+  /usuarios:
+    get:
+      description: Devuelve una lista paginada de usuarios con filtros opcionales
+        por tipo y estado.
+      operationId: usuariosGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Orden de los resultados por fecha
+        explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          default: descendente
+          enum:
+          - ascendente
+          - descendente
+          type: string
+        style: form
+      - description: "Filtrar por nombre, apellidos o email"
+        explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filtrar por tipo de usuario
+        explode: true
+        in: query
+        name: tipo
+        required: false
+        schema:
+          enum:
+          - DEMANDANTE
+          - REPRESENTANTE
+          - ADMINISTRADOR
+          type: string
+        style: form
+      - description: Filtrar por estado activo/inactivo
+        explode: true
+        in: query
+        name: activo
+        required: false
+        schema:
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioListResponse"
+          description: Listado de usuarios obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar usuarios con filtros opcionales
+      tags:
+      - usuarios
+      x-eov-operation-handler: controllers/UsuariosController
+    post:
+      description: Registra un nuevo ciudadano en el sistema LABORA como demandante
+        de empleo activo.
+      operationId: usuariosPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+          description: Usuario creado correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Ya existe un usuario con ese NIF/NIE
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Crear un nuevo usuario
+      tags:
+      - usuarios
+      x-eov-operation-handler: controllers/UsuariosController
+  /usuarios/{id}:
+    delete:
+      description: Elimina permanentemente un usuario del sistema.
+      operationId: usuariosIdDELETE
+      parameters:
+      - description: NIF o NIE del usuario
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 12345678A
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Usuario eliminado correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar un usuario por su NIF/NIE
+      tags:
+      - usuarios
+      x-eov-operation-handler: controllers/UsuariosController
+    get:
+      description: Devuelve los datos completos de un usuario a partir de su NIF o
+        NIE.
+      operationId: usuariosIdGET
+      parameters:
+      - description: NIF o NIE del usuario
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 12345678A
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+          description: Usuario encontrado
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener un usuario por su NIF/NIE
+      tags:
+      - usuarios
+      x-eov-operation-handler: controllers/UsuariosController
+    put:
+      description: Actualiza los datos de un usuario existente. También se usa para
+        activar o desactivar el perfil.
+      operationId: usuariosIdPUT
+      parameters:
+      - description: NIF o NIE del usuario
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 12345678A
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Usuario"
+          description: Usuario modificado correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Modificar los datos de un usuario
+      tags:
+      - usuarios
+      x-eov-operation-handler: controllers/UsuariosController
+  /empresas:
+    get:
+      description: Devuelve una lista paginada de empresas con filtros opcionales
+        por sector y clasificación.
+      operationId: empresasGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Orden de los resultados por fecha
+        explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          default: descendente
+          enum:
+          - ascendente
+          - descendente
+          type: string
+        style: form
+      - description: Filtrar por nombre o razón social
+        explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filtrar por sector de actividad
+        explode: true
+        in: query
+        name: sector
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filtrar por clasificación de empresa
+        explode: true
+        in: query
+        name: clasificacion
+        required: false
+        schema:
+          enum:
+          - MICRO
+          - PEQUEÑA
+          - MEDIANA
+          - GRANDE
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmpresaListResponse"
+          description: Listado de empresas obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar empresas con filtros opcionales
+      tags:
+      - empresas
+      x-eov-operation-handler: controllers/EmpresasController
+    post:
+      description: Registra una nueva empresa en el sistema LABORA.
+      operationId: empresasPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmpresaInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+          description: Empresa creada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Ya existe una empresa con ese CIF
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Crear una nueva empresa
+      tags:
+      - empresas
+      x-eov-operation-handler: controllers/EmpresasController
+  /empresas/{cif}:
+    delete:
+      operationId: empresasCifDELETE
+      parameters:
+      - description: CIF de la empresa
+        explode: false
+        in: path
+        name: cif
+        required: true
+        schema:
+          example: B12345678
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Empresa eliminada correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar una empresa por su CIF
+      tags:
+      - empresas
+      x-eov-operation-handler: controllers/EmpresasController
+    get:
+      description: Devuelve los datos completos de una empresa. Usado en el Flujo
+        1 para validar que la empresa está activa antes de publicar una oferta.
+      operationId: empresasCifGET
+      parameters:
+      - description: CIF de la empresa
+        explode: false
+        in: path
+        name: cif
+        required: true
+        schema:
+          example: B12345678
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+          description: Empresa encontrada
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener una empresa por su CIF
+      tags:
+      - empresas
+      x-eov-operation-handler: controllers/EmpresasController
+    put:
+      operationId: empresasCifPUT
+      parameters:
+      - description: CIF de la empresa
+        explode: false
+        in: path
+        name: cif
+        required: true
+        schema:
+          example: B12345678
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmpresaInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Empresa"
+          description: Empresa modificada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Modificar los datos de una empresa
+      tags:
+      - empresas
+      x-eov-operation-handler: controllers/EmpresasController
+  /ofertas:
+    get:
+      description: Devuelve una lista paginada de ofertas. Permite filtrar por etiquetas
+        para el matching y las suscripciones.
+      operationId: ofertasGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Orden de los resultados por fecha
+        explode: true
+        in: query
+        name: q
+        required: false
+        schema:
+          default: descendente
+          enum:
+          - ascendente
+          - descendente
+          type: string
+        style: form
+      - description: Filtrar por título o descripción
+        explode: true
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: Filtrar por etiquetas separadas por comas
+        explode: true
+        in: query
+        name: etiquetas
+        required: false
+        schema:
+          example: "informatica,programacion"
+          type: string
+        style: form
+      - description: Filtrar por estado de la oferta
+        explode: true
+        in: query
+        name: estado
+        required: false
+        schema:
+          enum:
+          - ACTIVA
+          - CERRADA
+          - PAUSADA
+          type: string
+        style: form
+      - description: Filtrar por empresa publicadora
+        explode: true
+        in: query
+        name: cif_empresa
+        required: false
+        schema:
+          example: B12345678
+          type: string
+        style: form
+      - description: Filtrar por tipo de contrato
+        explode: true
+        in: query
+        name: duracion_contrato
+        required: false
+        schema:
+          enum:
+          - INDEFINIDO
+          - TEMPORAL
+          - ALTERNANCIA
+          - PRACTICAS
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfertaListResponse"
+          description: Listado de ofertas obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar ofertas filtradas por etiquetas y otros criterios
+      tags:
+      - ofertas
+      x-eov-operation-handler: controllers/OfertasController
+    post:
+      description: Crea y publica una oferta de trabajo. Usado en el Flujo 1 tras
+        validar la empresa.
+      operationId: ofertasPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfertaInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+          description: Oferta creada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: No existe ninguna empresa con ese CIF
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Publicar una nueva oferta de trabajo
+      tags:
+      - ofertas
+      x-eov-operation-handler: controllers/OfertasController
+  /ofertas/{id}:
+    delete:
+      operationId: ofertasIdDELETE
+      parameters:
+      - description: Identificador único de la oferta
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: OFE-2026-001
+          type: string
+        style: simple
+      responses:
+        "200":
+          description: Oferta eliminada correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar una oferta por su ID
+      tags:
+      - ofertas
+      x-eov-operation-handler: controllers/OfertasController
+    get:
+      description: Devuelve los datos de una oferta. Usado en el Flujo 2 para obtener
+        los requisitos antes de validar la candidatura.
+      operationId: ofertasIdGET
+      parameters:
+      - description: Identificador único de la oferta
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: OFE-2026-001
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+          description: Oferta encontrada
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener una oferta por su ID
+      tags:
+      - ofertas
+      x-eov-operation-handler: controllers/OfertasController
+    put:
+      operationId: ofertasIdPUT
+      parameters:
+      - description: Identificador único de la oferta
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: OFE-2026-001
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfertaInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+          description: Oferta modificada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Modificar los datos de una oferta
+      tags:
+      - ofertas
+      x-eov-operation-handler: controllers/OfertasController
+  /cursos:
+    get:
+      description: Devuelve el catálogo de cursos disponibles. Usado en el Flujo 5
+        para que el demandante consulte las etiquetas disponibles antes de suscribirse.
+      operationId: cursosGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Filtrar por estado del curso
+        explode: true
+        in: query
+        name: estado
+        required: false
+        schema:
+          enum:
+          - activo
+          - inactivo
+          - finalizado
+          type: string
+        style: form
+      - description: Filtrar por etiqueta asociada al curso
+        explode: true
+        in: query
+        name: etiqueta
+        required: false
+        schema:
+          example: informatica
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CursoListResponse"
+          description: Listado de cursos obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar cursos con filtros opcionales
+      tags:
+      - cursos
+      x-eov-operation-handler: controllers/CursosController
+    post:
+      operationId: cursosPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CursoInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+          description: Curso creado correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Crear un nuevo curso de formación
+      tags:
+      - cursos
+      x-eov-operation-handler: controllers/CursosController
+  /cursos/{id}:
+    delete:
+      operationId: cursosIdDELETE
+      parameters:
+      - description: Identificador único del curso
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Curso eliminado correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar un curso por su ID
+      tags:
+      - cursos
+      x-eov-operation-handler: controllers/CursosController
+    get:
+      operationId: cursosIdGET
+      parameters:
+      - description: Identificador único del curso
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+          description: Curso encontrado
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener un curso por su ID
+      tags:
+      - cursos
+      x-eov-operation-handler: controllers/CursosController
+    put:
+      operationId: cursosIdPUT
+      parameters:
+      - description: Identificador único del curso
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CursoInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Curso"
+          description: Curso modificado correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Modificar los datos de un curso
+      tags:
+      - cursos
+      x-eov-operation-handler: controllers/CursosController
+  /candidaturas:
+    get:
+      operationId: candidaturasGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Filtrar candidaturas por oferta
+        explode: true
+        in: query
+        name: id_oferta
+        required: false
+        schema:
+          example: OFE-2026-001
+          type: string
+        style: form
+      - description: Filtrar candidaturas por candidato
+        explode: true
+        in: query
+        name: id_candidato
+        required: false
+        schema:
+          example: 12345678A
+          type: string
+        style: form
+      - description: Filtrar por estado de la candidatura
+        explode: true
+        in: query
+        name: estado
+        required: false
+        schema:
+          enum:
+          - PENDIENTE
+          - PRESELECCIONADO
+          - RECHAZADO
+          - ACEPTADO
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CandidaturaListResponse"
+          description: Listado de candidaturas obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar candidaturas con filtros opcionales
+      tags:
+      - candidaturas
+      x-eov-operation-handler: controllers/CandidaturasController
+    post:
+      description: Registra la candidatura de un demandante a una oferta de trabajo.
+        Usado en el Flujo 2 tras verificar la elegibilidad.
+      operationId: candidaturasPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CandidaturaInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidatura"
+          description: Candidatura registrada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El demandante ya tiene una candidatura activa para esta oferta
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Registrar una nueva candidatura
+      tags:
+      - candidaturas
+      x-eov-operation-handler: controllers/CandidaturasController
+  /candidaturas/{id}:
+    delete:
+      operationId: candidaturasIdDELETE
+      parameters:
+      - description: Identificador único de la candidatura
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "204":
+          description: Candidatura eliminada correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar una candidatura por su ID
+      tags:
+      - candidaturas
+      x-eov-operation-handler: controllers/CandidaturasController
+    get:
+      operationId: candidaturasIdGET
+      parameters:
+      - description: Identificador único de la candidatura
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidatura"
+          description: Candidatura encontrada
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener una candidatura por su ID
+      tags:
+      - candidaturas
+      x-eov-operation-handler: controllers/CandidaturasController
+    put:
+      description: Permite actualizar el estado de una candidatura. Usado para marcar
+        una candidatura como aceptada o rechazada.
+      operationId: candidaturasIdPUT
+      parameters:
+      - description: Identificador único de la candidatura
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CandidaturaInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Candidatura"
+          description: Candidatura modificada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Modificar el estado de una candidatura
+      tags:
+      - candidaturas
+      x-eov-operation-handler: controllers/CandidaturasController
+  /suscripciones:
+    get:
+      operationId: suscripcionesGET
+      parameters:
+      - description: Número de página
+        explode: true
+        in: query
+        name: p
+        required: false
+        schema:
+          default: 1
+          minimum: 1
+          type: integer
+        style: form
+      - description: Número de entradas por página
+        explode: true
+        in: query
+        name: s
+        required: false
+        schema:
+          default: 10
+          maximum: 50
+          type: integer
+        style: form
+      - description: Filtrar suscripciones por usuario
+        explode: true
+        in: query
+        name: id_usuario
+        required: false
+        schema:
+          example: 12345678A
+          type: string
+        style: form
+      - description: Filtrar por tipo de suscripción
+        explode: true
+        in: query
+        name: tipo
+        required: false
+        schema:
+          enum:
+          - OFERTA
+          - CURSO
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuscripcionListResponse"
+          description: Listado de suscripciones obtenido correctamente
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Listar suscripciones con filtros opcionales
+      tags:
+      - suscripciones
+      x-eov-operation-handler: controllers/SuscripcionesController
+    post:
+      description: Registra las preferencias de un demandante por etiquetas para recibir
+        notificaciones de nuevas ofertas o cursos. Usado en el Flujo 5.
+      operationId: suscripcionesPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuscripcionInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Suscripcion"
+          description: Suscripción registrada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: No existe ningún usuario con ese NIF/NIE
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Registrar una nueva suscripción
+      tags:
+      - suscripciones
+      x-eov-operation-handler: controllers/SuscripcionesController
+  /suscripciones/{id}:
+    delete:
+      description: Cancela una suscripción activa del demandante.
+      operationId: suscripcionesIdDELETE
+      parameters:
+      - description: Identificador único de la suscripción
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: Suscripción eliminada correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Eliminar una suscripción por su ID
+      tags:
+      - suscripciones
+      x-eov-operation-handler: controllers/SuscripcionesController
+    get:
+      operationId: suscripcionesIdGET
+      parameters:
+      - description: Identificador único de la suscripción
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Suscripcion"
+          description: Suscripción encontrada
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener una suscripción por su ID
+      tags:
+      - suscripciones
+      x-eov-operation-handler: controllers/SuscripcionesController
+  /validacion/usuarios:
+    post:
+      description: Valida el formato y completitud de los datos de un nuevo usuario
+        antes de su registro. Usado en el Flujo 4.
+      operationId: validacionUsuariosPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidacionUsuarioInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidacionResponse"
+          description: Validación realizada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Validar datos de un usuario
+      tags:
+      - validacion
+      x-eov-operation-handler: controllers/ValidacionController
+  /validacion/certificados:
+    post:
+      description: Verifica que el tipo de certificado solicitado existe y es válido
+        para el demandante. Usado en el Flujo 3.
+      operationId: validacionCertificadosPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidacionCertificadoInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidacionResponse"
+          description: Validación realizada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El tipo de certificado no existe en el sistema
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Validar tipo de certificado solicitado
+      tags:
+      - validacion
+      x-eov-operation-handler: controllers/ValidacionController
+  /validacion/etiquetas:
+    post:
+      description: Verifica que las etiquetas seleccionadas por el demandante existen
+        en el sistema. Usado en el Flujo 5.
+      operationId: validacionEtiquetasPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidacionEtiquetasInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidacionResponse"
+          description: Validación realizada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Validar etiquetas de suscripción
+      tags:
+      - validacion
+      x-eov-operation-handler: controllers/ValidacionController
+  /validacion/elegibilidad:
+    post:
+      description: Verifica si un demandante cumple los requisitos de una oferta de
+        trabajo antes de registrar su candidatura. Usado en el Flujo 2.
+      operationId: validacionElegibilidadPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidacionElegibilidadInput"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidacionResponse"
+          description: Validación de elegibilidad realizada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: No existe el usuario o la oferta indicada
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Validar elegibilidad de un demandante para una oferta
+      tags:
+      - validacion
+      x-eov-operation-handler: controllers/ValidacionController
+  /notificaciones:
+    post:
+      description: Envía una notificación a una lista de destinatarios. Usado transversalmente
+        en todos los flujos.
+      operationId: notificacionesPOST
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificacionInput"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notificacion"
+          description: Notificación procesada y encolada correctamente
+        "400":
+          content:
+            application/json:
+              example:
+                mensaje: Los datos introducidos son incorrectos
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Los datos introducidos son incorrectos
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Enviar una nueva notificación
+      tags:
+      - notificaciones
+      x-eov-operation-handler: controllers/NotificacionesController
+  /notificaciones/{id}:
+    get:
+      operationId: notificacionesIdGET
+      parameters:
+      - description: Identificador único de la notificación
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          example: 10458
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notificacion"
+          description: Estado de la notificación obtenido correctamente
+        "404":
+          content:
+            application/json:
+              example:
+                mensaje: El recurso solicitado no existe
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: El recurso solicitado no existe
+        "500":
+          content:
+            application/json:
+              example:
+                mensaje: Error interno del servidor
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Error interno del servidor
+      summary: Obtener el estado de una notificación por su ID
+      tags:
+      - notificaciones
+      x-eov-operation-handler: controllers/NotificacionesController
+components:
+  parameters:
+    Pagina:
+      description: Número de página
+      explode: true
+      in: query
+      name: p
+      required: false
+      schema:
+        default: 1
+        minimum: 1
+        type: integer
+      style: form
+    TamanoPagina:
+      description: Número de entradas por página
+      explode: true
+      in: query
+      name: s
+      required: false
+      schema:
+        default: 10
+        maximum: 50
+        type: integer
+      style: form
+    Orden:
+      description: Orden de los resultados por fecha
+      explode: true
+      in: query
+      name: q
+      required: false
+      schema:
+        default: descendente
+        enum:
+        - ascendente
+        - descendente
+        type: string
+      style: form
+    IdNIFNIE:
+      description: NIF o NIE del usuario
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: 12345678A
+        type: string
+      style: simple
+    IdCIF:
+      description: CIF de la empresa
+      explode: false
+      in: path
+      name: cif
+      required: true
+      schema:
+        example: B12345678
+        type: string
+      style: simple
+    IdOferta:
+      description: Identificador único de la oferta
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: OFE-2026-001
+        type: string
+      style: simple
+    IdCurso:
+      description: Identificador único del curso
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: 1
+        type: integer
+      style: simple
+    IdCandidatura:
+      description: Identificador único de la candidatura
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: 1
+        type: integer
+      style: simple
+    IdSuscripcion:
+      description: Identificador único de la suscripción
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: 1
+        type: integer
+      style: simple
+    IdNotificacion:
+      description: Identificador único de la notificación
+      explode: false
+      in: path
+      name: id
+      required: true
+      schema:
+        example: 10458
+        type: integer
+      style: simple
+  responses:
+    BadRequest:
+      content:
+        application/json:
+          example:
+            mensaje: Los datos introducidos son incorrectos
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Los datos introducidos son incorrectos
+    NotFound:
+      content:
+        application/json:
+          example:
+            mensaje: El recurso solicitado no existe
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: El recurso solicitado no existe
+    InternalError:
+      content:
+        application/json:
+          example:
+            mensaje: Error interno del servidor
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Error interno del servidor
+  schemas:
+    Error:
+      example:
+        mensaje: Descripción del error ocurrido
+      properties:
+        mensaje:
+          example: Descripción del error ocurrido
+          type: string
+      required:
+      - mensaje
+      type: object
+    UsuarioInput:
+      description: Datos necesarios para crear o modificar un usuario
+      example:
+        apellidos: García López
+        tipo: DEMANDANTE
+        id_nie: 12345678A
+        nombre: María
+        email: maria.garcia@email.com
+        activo: true
+      properties:
+        id_nie:
+          description: NIF o NIE del usuario (identificador único)
+          example: 12345678A
+          type: string
+        nombre:
+          example: María
+          type: string
+        apellidos:
+          example: García López
+          type: string
+        email:
+          example: maria.garcia@email.com
+          format: email
+          type: string
+        tipo:
+          enum:
+          - DEMANDANTE
+          - REPRESENTANTE
+          - ADMINISTRADOR
+          example: DEMANDANTE
+          type: string
+        activo:
+          default: true
+          type: boolean
+      required:
+      - apellidos
+      - email
+      - id_nie
+      - nombre
+      - tipo
+      type: object
+    Usuario:
+      allOf:
+      - $ref: "#/components/schemas/UsuarioInput"
+      description: Usuario completo tal como se almacena en el sistema
+      example:
+        apellidos: García López
+        tipo: DEMANDANTE
+        id_nie: 12345678A
+        nombre: María
+        email: maria.garcia@email.com
+        activo: true
+    UsuarioListResponse:
+      example:
+        pagina: 1
+        total: 120
+        resultados:
+        - apellidos: García López
+          tipo: DEMANDANTE
+          id_nie: 12345678A
+          nombre: María
+          email: maria.garcia@email.com
+          activo: true
+        - apellidos: García López
+          tipo: DEMANDANTE
+          id_nie: 12345678A
+          nombre: María
+          email: maria.garcia@email.com
+          activo: true
+      properties:
+        total:
+          example: 120
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Usuario"
+          type: array
+      type: object
+    EmpresaInput:
+      description: Datos necesarios para crear o modificar una empresa
+      example:
+        cif: B12345678
+        fecha_constitucion: 2010-03-15
+        correo: contacto@techsolutions.es
+        razon_social: TechSolutions Sociedad Limitada
+        clasificacion: PEQUEÑA
+        telefono: "965123456"
+        nombre: TechSolutions SL
+        sector: Tecnología
+      properties:
+        cif:
+          example: B12345678
+          type: string
+        nombre:
+          example: TechSolutions SL
+          type: string
+        razon_social:
+          example: TechSolutions Sociedad Limitada
+          type: string
+        correo:
+          example: contacto@techsolutions.es
+          format: email
+          type: string
+        telefono:
+          example: "965123456"
+          type: string
+        fecha_constitucion:
+          example: 2010-03-15
+          format: date
+          type: string
+        sector:
+          example: Tecnología
+          type: string
+        clasificacion:
+          enum:
+          - MICRO
+          - PEQUEÑA
+          - MEDIANA
+          - GRANDE
+          example: PEQUEÑA
+          type: string
+      required:
+      - cif
+      - clasificacion
+      - correo
+      - fecha_constitucion
+      - nombre
+      - razon_social
+      - sector
+      - telefono
+      type: object
+    Empresa:
+      allOf:
+      - $ref: "#/components/schemas/EmpresaInput"
+      description: Empresa completa tal como se almacena en el sistema
+      example:
+        cif: B12345678
+        fecha_constitucion: 2010-03-15
+        correo: contacto@techsolutions.es
+        razon_social: TechSolutions Sociedad Limitada
+        clasificacion: PEQUEÑA
+        telefono: "965123456"
+        nombre: TechSolutions SL
+        sector: Tecnología
+    EmpresaListResponse:
+      example:
+        pagina: 1
+        total: 45
+        resultados:
+        - cif: B12345678
+          fecha_constitucion: 2010-03-15
+          correo: contacto@techsolutions.es
+          razon_social: TechSolutions Sociedad Limitada
+          clasificacion: PEQUEÑA
+          telefono: "965123456"
+          nombre: TechSolutions SL
+          sector: Tecnología
+        - cif: B12345678
+          fecha_constitucion: 2010-03-15
+          correo: contacto@techsolutions.es
+          razon_social: TechSolutions Sociedad Limitada
+          clasificacion: PEQUEÑA
+          telefono: "965123456"
+          nombre: TechSolutions SL
+          sector: Tecnología
+      properties:
+        total:
+          example: 45
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Empresa"
+          type: array
+      type: object
+    OfertaInput:
+      description: Datos necesarios para crear o modificar una oferta de trabajo
+      example:
+        descripcion: Buscamos desarrollador con experiencia en React y Node.js
+        estado: ACTIVA
+        cif_empresa: B12345678
+        etiquetas:
+        - informatica
+        - programacion
+        - fullstack
+        duracion_contrato: INDEFINIDO
+        titulo: Desarrollador Full Stack
+        fecha_publicacion: 2026-05-14
+      properties:
+        cif_empresa:
+          example: B12345678
+          type: string
+        titulo:
+          example: Desarrollador Full Stack
+          type: string
+        descripcion:
+          example: Buscamos desarrollador con experiencia en React y Node.js
+          type: string
+        duracion_contrato:
+          enum:
+          - INDEFINIDO
+          - TEMPORAL
+          - ALTERNANCIA
+          - PRACTICAS
+          example: INDEFINIDO
+          type: string
+        estado:
+          default: ACTIVA
+          enum:
+          - ACTIVA
+          - CERRADA
+          - PAUSADA
+          example: ACTIVA
+          type: string
+        etiquetas:
+          example:
+          - informatica
+          - programacion
+          - fullstack
+          items:
+            type: string
+          type: array
+        fecha_publicacion:
+          example: 2026-05-14
+          format: date
+          type: string
+      required:
+      - cif_empresa
+      - descripcion
+      - duracion_contrato
+      - etiquetas
+      - titulo
+      type: object
+    Oferta:
+      allOf:
+      - $ref: "#/components/schemas/OfertaInput"
+      - description: Oferta completa tal como se almacena en el sistema
+        properties:
+          id:
+            example: OFE-2026-001
+            type: string
+        type: object
+        example: null
+      example:
+        descripcion: Buscamos desarrollador con experiencia en React y Node.js
+        estado: ACTIVA
+        cif_empresa: B12345678
+        etiquetas:
+        - informatica
+        - programacion
+        - fullstack
+        duracion_contrato: INDEFINIDO
+        titulo: Desarrollador Full Stack
+        id: OFE-2026-001
+        fecha_publicacion: 2026-05-14
+    OfertaListResponse:
+      example:
+        pagina: 1
+        total: 80
+        resultados:
+        - descripcion: Buscamos desarrollador con experiencia en React y Node.js
+          estado: ACTIVA
+          cif_empresa: B12345678
+          etiquetas:
+          - informatica
+          - programacion
+          - fullstack
+          duracion_contrato: INDEFINIDO
+          titulo: Desarrollador Full Stack
+          id: OFE-2026-001
+          fecha_publicacion: 2026-05-14
+        - descripcion: Buscamos desarrollador con experiencia en React y Node.js
+          estado: ACTIVA
+          cif_empresa: B12345678
+          etiquetas:
+          - informatica
+          - programacion
+          - fullstack
+          duracion_contrato: INDEFINIDO
+          titulo: Desarrollador Full Stack
+          id: OFE-2026-001
+          fecha_publicacion: 2026-05-14
+      properties:
+        total:
+          example: 80
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Oferta"
+          type: array
+      type: object
+    CursoInput:
+      example:
+        descripcion: Curso básico de programación orientado a desempleados
+        fecha_inicio: 2026-05-14
+        etiquetas:
+        - informatica
+        - programacion
+        fecha_fin: 2026-12-31
+        titulo: Introducción a la programación
+      properties:
+        titulo:
+          example: Introducción a la programación
+          type: string
+        descripcion:
+          example: Curso básico de programación orientado a desempleados
+          type: string
+        fecha_inicio:
+          example: 2026-05-14
+          format: date
+          type: string
+        fecha_fin:
+          example: 2026-12-31
+          format: date
+          type: string
+        etiquetas:
+          example:
+          - informatica
+          - programacion
+          items:
+            type: string
+          type: array
+      required:
+      - descripcion
+      - fecha_fin
+      - fecha_inicio
+      - titulo
+      type: object
+    Curso:
+      allOf:
+      - $ref: "#/components/schemas/CursoInput"
+      - description: Curso completo tal como se almacena en el sistema
+        properties:
+          id:
+            example: 1
+            type: integer
+          estado:
+            enum:
+            - activo
+            - inactivo
+            - finalizado
+            example: activo
+            type: string
+        type: object
+        example: null
+      example:
+        descripcion: Curso básico de programación orientado a desempleados
+        estado: activo
+        fecha_inicio: 2026-05-14
+        etiquetas:
+        - informatica
+        - programacion
+        fecha_fin: 2026-12-31
+        titulo: Introducción a la programación
+        id: 1
+    CursoListResponse:
+      example:
+        pagina: 1
+        total: 45
+        resultados:
+        - descripcion: Curso básico de programación orientado a desempleados
+          estado: activo
+          fecha_inicio: 2026-05-14
+          etiquetas:
+          - informatica
+          - programacion
+          fecha_fin: 2026-12-31
+          titulo: Introducción a la programación
+          id: 1
+        - descripcion: Curso básico de programación orientado a desempleados
+          estado: activo
+          fecha_inicio: 2026-05-14
+          etiquetas:
+          - informatica
+          - programacion
+          fecha_fin: 2026-12-31
+          titulo: Introducción a la programación
+          id: 1
+      properties:
+        total:
+          example: 45
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Curso"
+          type: array
+      type: object
+    CandidaturaInput:
+      description: Datos necesarios para registrar una candidatura
+      example:
+        estado: PENDIENTE
+        fecha_aplicacion: 2026-05-14
+        id_oferta: OFE-2026-001
+        id_candidato: 12345678A
+      properties:
+        id_candidato:
+          description: NIF/NIE del demandante candidato
+          example: 12345678A
+          type: string
+        id_oferta:
+          description: Identificador de la oferta a la que se aplica
+          example: OFE-2026-001
+          type: string
+        estado:
+          default: PENDIENTE
+          description: Estado de la candidatura
+          enum:
+          - PENDIENTE
+          - PRESELECCIONADO
+          - RECHAZADO
+          - ACEPTADO
+          example: PENDIENTE
+          type: string
+        fecha_aplicacion:
+          description: Fecha en la que se registra la candidatura
+          example: 2026-05-14
+          format: date
+          type: string
+      required:
+      - id_candidato
+      - id_oferta
+      type: object
+    Candidatura:
+      allOf:
+      - $ref: "#/components/schemas/CandidaturaInput"
+      - description: Candidatura completa tal como se almacena en el sistema
+        properties:
+          id:
+            example: 1
+            type: integer
+        type: object
+        example: null
+      example:
+        estado: PENDIENTE
+        fecha_aplicacion: 2026-05-14
+        id_oferta: OFE-2026-001
+        id: 1
+        id_candidato: 12345678A
+    CandidaturaListResponse:
+      example:
+        pagina: 1
+        total: 45
+        resultados:
+        - estado: PENDIENTE
+          fecha_aplicacion: 2026-05-14
+          id_oferta: OFE-2026-001
+          id: 1
+          id_candidato: 12345678A
+        - estado: PENDIENTE
+          fecha_aplicacion: 2026-05-14
+          id_oferta: OFE-2026-001
+          id: 1
+          id_candidato: 12345678A
+      properties:
+        total:
+          example: 45
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Candidatura"
+          type: array
+      type: object
+    SuscripcionInput:
+      description: Datos necesarios para registrar una suscripción de un demandante
+      example:
+        tipo: OFERTA
+        id_usuario: 12345678A
+        etiquetas:
+        - informatica
+        - programacion
+      properties:
+        id_usuario:
+          description: NIF/NIE del demandante que se suscribe
+          example: 12345678A
+          type: string
+        tipo:
+          description: Tipo de suscripción (a ofertas de trabajo o a cursos de formación)
+          enum:
+          - OFERTA
+          - CURSO
+          example: OFERTA
+          type: string
+        etiquetas:
+          description: Lista de etiquetas de interés seleccionadas por el demandante
+          example:
+          - informatica
+          - programacion
+          items:
+            type: string
+          type: array
+      required:
+      - etiquetas
+      - id_usuario
+      - tipo
+      type: object
+    Suscripcion:
+      allOf:
+      - $ref: "#/components/schemas/SuscripcionInput"
+      - description: Suscripción completa tal como se almacena en el sistema
+        properties:
+          id:
+            example: 1
+            type: integer
+          fecha_suscripcion:
+            example: 2026-05-14
+            format: date
+            type: string
+          activa:
+            default: true
+            type: boolean
+        type: object
+        example: null
+      example:
+        tipo: OFERTA
+        id_usuario: 12345678A
+        etiquetas:
+        - informatica
+        - programacion
+        fecha_suscripcion: 2026-05-14
+        id: 1
+        activa: true
+    SuscripcionListResponse:
+      example:
+        pagina: 1
+        total: 10
+        resultados:
+        - tipo: OFERTA
+          id_usuario: 12345678A
+          etiquetas:
+          - informatica
+          - programacion
+          fecha_suscripcion: 2026-05-14
+          id: 1
+          activa: true
+        - tipo: OFERTA
+          id_usuario: 12345678A
+          etiquetas:
+          - informatica
+          - programacion
+          fecha_suscripcion: 2026-05-14
+          id: 1
+          activa: true
+      properties:
+        total:
+          example: 10
+          type: integer
+        pagina:
+          example: 1
+          type: integer
+        resultados:
+          items:
+            $ref: "#/components/schemas/Suscripcion"
+          type: array
+      type: object
+    ValidacionUsuarioInput:
+      description: Datos del usuario a validar antes del registro
+      example:
+        apellidos: García López
+        id_nie: 12345678A
+        nombre: María
+        email: maria.garcia@email.com
+      properties:
+        id_nie:
+          example: 12345678A
+          type: string
+        nombre:
+          example: María
+          type: string
+        apellidos:
+          example: García López
+          type: string
+        email:
+          example: maria.garcia@email.com
+          format: email
+          type: string
+      required:
+      - apellidos
+      - email
+      - id_nie
+      - nombre
+      type: object
+    ValidacionCertificadoInput:
+      description: Datos del certificado a validar antes de su generación
+      example:
+        motivo: Acreditación para proceso de selección
+        id_usuario: 12345678A
+        tipo_certificado: CERTIFICADO_PROFESIONALIDAD
+      properties:
+        id_usuario:
+          description: NIF/NIE del demandante solicitante
+          example: 12345678A
+          type: string
+        tipo_certificado:
+          description: Tipo de certificado solicitado
+          example: CERTIFICADO_PROFESIONALIDAD
+          type: string
+        motivo:
+          description: Motivo de la solicitud del certificado
+          example: Acreditación para proceso de selección
+          type: string
+      required:
+      - id_usuario
+      - tipo_certificado
+      type: object
+    ValidacionEtiquetasInput:
+      description: Lista de etiquetas a validar antes de registrar una suscripción
+      example:
+        etiquetas:
+        - informatica
+        - programacion
+      properties:
+        etiquetas:
+          example:
+          - informatica
+          - programacion
+          items:
+            type: string
+          type: array
+      required:
+      - etiquetas
+      type: object
+    ValidacionElegibilidadInput:
+      description: Datos para verificar si un demandante es elegible para una oferta
+      example:
+        id_usuario: 12345678A
+        id_oferta: OFE-2026-001
+      properties:
+        id_usuario:
+          description: NIF/NIE del demandante candidato
+          example: 12345678A
+          type: string
+        id_oferta:
+          description: Identificador de la oferta
+          example: OFE-2026-001
+          type: string
+      required:
+      - id_oferta
+      - id_usuario
+      type: object
+    ValidacionResponse:
+      description: Resultado de cualquier operación de validación
+      example:
+        motivo: Todos los datos son correctos
+        valido: true
+      properties:
+        valido:
+          description: Indica si la validación ha sido satisfactoria
+          example: true
+          type: boolean
+        motivo:
+          description: Descripción del resultado o motivo del rechazo si no es válido
+          example: Todos los datos son correctos
+          type: string
+      type: object
+    NotificacionInput:
+      description: Datos necesarios para enviar una notificación
+      example:
+        tipo: CERTIFICADO
+        destinatarios:
+        - usuario1@email.com
+        - empresa2@email.com
+        asunto: Resultado de su solicitud de certificado LABORA
+        mensaje: Su certificado ha sido generado correctamente y ya puede descargarlo.
+      properties:
+        destinatarios:
+          example:
+          - usuario1@email.com
+          - empresa2@email.com
+          items:
+            format: email
+            type: string
+          type: array
+        asunto:
+          example: Resultado de su solicitud de certificado LABORA
+          type: string
+        mensaje:
+          example: Su certificado ha sido generado correctamente y ya puede descargarlo.
+          type: string
+        tipo:
+          enum:
+          - OFERTA
+          - CERTIFICADO
+          - ESTADO_CANDIDATURA
+          - SUSCRIPCION
+          - ALERTA
+          example: CERTIFICADO
+          type: string
+      required:
+      - asunto
+      - destinatarios
+      - mensaje
+      type: object
+    Notificacion:
+      allOf:
+      - $ref: "#/components/schemas/NotificacionInput"
+      - description: Notificación completa tal como se registra en el sistema
+        properties:
+          id:
+            example: 10458
+            type: integer
+          estado:
+            default: PENDIENTE
+            enum:
+            - PENDIENTE
+            - ENVIADO
+            - ERROR
+            example: ENVIADO
+            type: string
+          fecha_envio:
+            example: 2026-05-14T19:45:00Z
+            format: date-time
+            type: string
+        type: object
+        example: null
+      example:
+        tipo: CERTIFICADO
+        estado: ENVIADO
+        destinatarios:
+        - usuario1@email.com
+        - empresa2@email.com
+        fecha_envio: 2026-05-14T19:45:00Z
+        asunto: Resultado de su solicitud de certificado LABORA
+        mensaje: Su certificado ha sido generado correctamente y ya puede descargarlo.
+        id: 10458
