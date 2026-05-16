@@ -4,7 +4,7 @@
   "description": "Contrato REST unificado del sistema LABORA (Servicio Público de Empleo de la Comunitat Valenciana). Incluye la gestión de usuarios, empresas, ofertas de trabajo, cursos de formación, candidaturas, suscripciones, validaciones y notificaciones. ",
   "main": "index.js",
   "scripts": {
-    "prestart": "npm install",
+    "prestart": "npm install --legacy-peer-deps",
     "start": "node index.js"
   },
   "keywords": [
@@ -33,7 +33,7 @@
     "eslint": "^10.4.0",
     "eslint-config-airbnb-base": "^14.0.0",
     "eslint-plugin-import": "^2.17.2",
-    "mocha": "^11.7.5"
+    "mocha": "^7.2.0"
   },
   "eslintConfig": {
     "env": {

@@ -1,133 +1,166 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://www.example.org/ServicioIdentidad/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" name="ServicioIdentidad" targetNamespace="http://www.example.org/ServicioIdentidad/">
+<wsdl:definitions
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tns="http://www.labora.gva.es/ServicioIdentidad/"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  name="ServicioIdentidad"
+  targetNamespace="http://www.labora.gva.es/ServicioIdentidad/">
+
+  <!-- ═══════════════════════════════════════════════════════
+       TIPOS
+       Operaciones:
+         - AutenticarUsuario   → Flujos 3 y 4
+         - VerificarPrivilegios → Comprobación de permisos por nivel
+         - CrearContrasena     → Alta de contraseña en el registro
+  ═══════════════════════════════════════════════════════ -->
+
   <wsdl:types>
-    <xsd:schema targetNamespace="http://www.example.org/ServicioIdentidad/">
+    <xsd:schema targetNamespace="http://www.labora.gva.es/ServicioIdentidad/">
+
+      <!-- ── AutenticarUsuario ── -->
       <xsd:element name="AutenticarUsuario">
         <xsd:complexType>
           <xsd:sequence>
-          	<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"/>
-          	<xsd:element name="contraseña" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
+            <xsd:element name="nifnie"      type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="contrasena"  type="xsd:string" minOccurs="1" maxOccurs="1"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
+
       <xsd:element name="AutenticarUsuarioResponse">
         <xsd:complexType>
           <xsd:sequence>
-          	<xsd:element name="ok" type="xsd:boolean" maxOccurs="1"
-          		minOccurs="1" />
-          	<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+            <xsd:element name="ok"      type="xsd:boolean" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mensaje" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
+
+      <!-- ── VerificarPrivilegios ── -->
       <xsd:element name="VerificarPrivilegios">
-      	<xsd:complexType>
-      		<xsd:sequence>
-
-      			<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-      			<xsd:element name="nivel" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-      		</xsd:sequence>
-      	</xsd:complexType>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifnie" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="nivel"  type="xsd:string" minOccurs="1" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
       </xsd:element>
+
       <xsd:element name="VerificarPrivilegiosResponse">
-      	<xsd:complexType>
-      		<xsd:sequence>
-
-      			<xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"></xsd:element>
-      			<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-      		</xsd:sequence>
-      	</xsd:complexType>
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok"      type="xsd:boolean" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mensaje" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
       </xsd:element>
 
-
-      <xsd:element name="CrearContraseña">
-      	<xsd:complexType>
-      		<xsd:sequence>
-      			<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-      			<xsd:element name="contraseña" type="xsd:string" maxOccurs="1" minOccurs="1"></xsd:element>
-      		</xsd:sequence>
-      	</xsd:complexType>
+      <!-- ── CrearContrasena ── -->
+      <xsd:element name="CrearContrasena">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifnie"     type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="contrasena" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
       </xsd:element>
-      <xsd:element name="CrearContraseñaResponse">
-      	<xsd:complexType>
-      		<xsd:sequence>
 
-      			<xsd:element name="ok" type="xsd:boolean" maxOccurs="1" minOccurs="1"></xsd:element>
-      			<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
-      		</xsd:sequence>
-      	</xsd:complexType>
+      <xsd:element name="CrearContrasenaResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok"      type="xsd:boolean" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mensaje" type="xsd:string"  minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
       </xsd:element>
+
     </xsd:schema>
   </wsdl:types>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MENSAJES
+  ═══════════════════════════════════════════════════════ -->
+
   <wsdl:message name="AutenticarUsuarioRequest">
-    <wsdl:part element="tns:AutenticarUsuario" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:AutenticarUsuario"/>
   </wsdl:message>
   <wsdl:message name="AutenticarUsuarioResponse">
-    <wsdl:part element="tns:AutenticarUsuarioResponse" name="parameters"/>
+    <wsdl:part name="parameters" element="tns:AutenticarUsuarioResponse"/>
   </wsdl:message>
+
   <wsdl:message name="VerificarPrivilegiosRequest">
-  	<wsdl:part name="parameters" element="tns:VerificarPrivilegios"></wsdl:part>
+    <wsdl:part name="parameters" element="tns:VerificarPrivilegios"/>
   </wsdl:message>
   <wsdl:message name="VerificarPrivilegiosResponse">
-  	<wsdl:part name="parameters" element="tns:VerificarPrivilegiosResponse"></wsdl:part>
+    <wsdl:part name="parameters" element="tns:VerificarPrivilegiosResponse"/>
   </wsdl:message>
-  <wsdl:message name="CrearContraseñaRequest">
-  	<wsdl:part name="parameters" element="tns:CrearContraseña"></wsdl:part>
+
+  <wsdl:message name="CrearContrasenaRequest">
+    <wsdl:part name="parameters" element="tns:CrearContrasena"/>
   </wsdl:message>
-  <wsdl:message name="CrearContraseñaResponse">
-  	<wsdl:part name="parameters" element="tns:CrearContraseñaResponse"></wsdl:part>
+  <wsdl:message name="CrearContrasenaResponse">
+    <wsdl:part name="parameters" element="tns:CrearContrasenaResponse"/>
   </wsdl:message>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PORT TYPE
+  ═══════════════════════════════════════════════════════ -->
+
   <wsdl:portType name="ServicioIdentidad">
+
     <wsdl:operation name="AutenticarUsuario">
-      <wsdl:input message="tns:AutenticarUsuarioRequest"/>
+      <wsdl:input  message="tns:AutenticarUsuarioRequest"/>
       <wsdl:output message="tns:AutenticarUsuarioResponse"/>
     </wsdl:operation>
+
     <wsdl:operation name="VerificarPrivilegios">
-    	<wsdl:input message="tns:VerificarPrivilegiosRequest"></wsdl:input>
-    	<wsdl:output message="tns:VerificarPrivilegiosResponse"></wsdl:output>
+      <wsdl:input  message="tns:VerificarPrivilegiosRequest"/>
+      <wsdl:output message="tns:VerificarPrivilegiosResponse"/>
     </wsdl:operation>
-    <wsdl:operation name="CrearContraseña">
-    	<wsdl:input message="tns:CrearContraseñaRequest"></wsdl:input>
-    	<wsdl:output message="tns:CrearContraseñaResponse"></wsdl:output>
+
+    <wsdl:operation name="CrearContrasena">
+      <wsdl:input  message="tns:CrearContrasenaRequest"/>
+      <wsdl:output message="tns:CrearContrasenaResponse"/>
     </wsdl:operation>
+
   </wsdl:portType>
-  <wsdl:binding name="ServicioIdentidadSOAP"
-  	type="tns:ServicioIdentidad">
-  	<soap:binding style="document"
-  		transport="http://schemas.xmlsoap.org/soap/http" />
-  	<wsdl:operation name="AutenticarUsuario">
-  		<soap:operation
-  			soapAction="http://www.example.org/ServicioIdentidad/AutenticarUsuario" />
-  		<wsdl:input>
-  			<soap:body use="literal" />
-  		</wsdl:input>
-  		<wsdl:output>
-  			<soap:body use="literal" />
-  		</wsdl:output>
-  	</wsdl:operation>
-  	<wsdl:operation name="VerificarPrivilegios">
-  		<soap:operation
-  			soapAction="http://www.example.org/ServicioIdentidad/VerificarPrivilegios" />
-  		<wsdl:input>
-  			<soap:body use="literal" />
-  		</wsdl:input>
-  		<wsdl:output>
-  			<soap:body use="literal" />
-  		</wsdl:output>
-  	</wsdl:operation>
-  	<wsdl:operation name="CrearContraseña">
-  		<soap:operation
-  			soapAction="http://www.example.org/ServicioIdentidad/CrearContraseña" />
-  		<wsdl:input>
-  			<soap:body use="literal" />
-  		</wsdl:input>
-  		<wsdl:output>
-  			<soap:body use="literal" />
-  		</wsdl:output>
-  	</wsdl:operation>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BINDING
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:binding name="ServicioIdentidadSOAP" type="tns:ServicioIdentidad">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <wsdl:operation name="AutenticarUsuario">
+      <soap:operation soapAction="http://www.labora.gva.es/ServicioIdentidad/AutenticarUsuario"/>
+      <wsdl:input>  <soap:body use="literal"/> </wsdl:input>
+      <wsdl:output> <soap:body use="literal"/> </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="VerificarPrivilegios">
+      <soap:operation soapAction="http://www.labora.gva.es/ServicioIdentidad/VerificarPrivilegios"/>
+      <wsdl:input>  <soap:body use="literal"/> </wsdl:input>
+      <wsdl:output> <soap:body use="literal"/> </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CrearContrasena">
+      <soap:operation soapAction="http://www.labora.gva.es/ServicioIdentidad/CrearContrasena"/>
+      <wsdl:input>  <soap:body use="literal"/> </wsdl:input>
+      <wsdl:output> <soap:body use="literal"/> </wsdl:output>
+    </wsdl:operation>
+
   </wsdl:binding>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SERVICIO
+  ═══════════════════════════════════════════════════════ -->
+
   <wsdl:service name="ServicioIdentidad">
     <wsdl:port binding="tns:ServicioIdentidadSOAP" name="ServicioIdentidadSOAP">
-      <soap:address location="http://www.example.org/"/>
+      <soap:address location="http://www.labora.gva.es/ServicioIdentidad"/>
     </wsdl:port>
   </wsdl:service>
+
 </wsdl:definitions>

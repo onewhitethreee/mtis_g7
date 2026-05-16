@@ -4,7 +4,8 @@ info:
   version: '1.0'
   description: >
     Contrato REST unificado del sistema LABORA (Servicio Público de Empleo de la Comunitat Valenciana).
-    Incluye la gestión de usuarios, empresas, ofertas de trabajo, cursos de formación y notificaciones.
+    Incluye la gestión de usuarios, empresas, ofertas de trabajo, cursos de formación,
+    candidaturas, suscripciones, validaciones y notificaciones.
 
 tags:
   - name: usuarios
@@ -16,9 +17,11 @@ tags:
   - name: cursos
     description: Gestión de cursos de formación de la plataforma LABORA
   - name: candidaturas
-    description: Gestión de candidaturas de demandantes a ofertas
-  - name: matching
-    description: Seleccionar la mejor candidatura de una oferta
+    description: Gestión de candidaturas de demandantes a ofertas de trabajo
+  - name: suscripciones
+    description: Gestión de suscripciones de demandantes a ofertas y cursos por etiquetas
+  - name: validacion
+    description: Validación de datos de usuarios, certificados, etiquetas y elegibilidad
   - name: notificaciones
     description: Envío y consulta de notificaciones a usuarios y empresas
 
@@ -33,6 +36,7 @@ paths:
       tags:
         - usuarios
       summary: Crear un nuevo usuario
+      description: Registra un nuevo ciudadano en el sistema LABORA como demandante de empleo activo.
       requestBody:
         required: true
         content:
@@ -61,6 +65,7 @@ paths:
       tags:
         - usuarios
       summary: Listar usuarios con filtros opcionales
+      description: Devuelve una lista paginada de usuarios con filtros opcionales por tipo y estado.
       parameters:
         - $ref: '#/components/parameters/Pagina'
         - $ref: '#/components/parameters/TamanoPagina'
@@ -96,6 +101,7 @@ paths:
       tags:
         - usuarios
       summary: Obtener un usuario por su NIF/NIE
+      description: Devuelve los datos completos de un usuario a partir de su NIF o NIE.
       parameters:
         - $ref: '#/components/parameters/IdNIFNIE'
       responses:
@@ -114,6 +120,7 @@ paths:
       tags:
         - usuarios
       summary: Modificar los datos de un usuario
+      description: Actualiza los datos de un usuario existente. También se usa para activar o desactivar el perfil.
       parameters:
         - $ref: '#/components/parameters/IdNIFNIE'
       requestBody:
@@ -121,7 +128,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UsuarioInput'
+              $ref: '#/components/schemas/UsuarioUpdateInput'
       responses:
         '200':
           description: Usuario modificado correctamente
@@ -140,6 +147,7 @@ paths:
       tags:
         - usuarios
       summary: Eliminar un usuario por su NIF/NIE
+      description: Elimina permanentemente un usuario del sistema.
       parameters:
         - $ref: '#/components/parameters/IdNIFNIE'
       responses:
@@ -159,6 +167,7 @@ paths:
       tags:
         - empresas
       summary: Crear una nueva empresa
+      description: Registra una nueva empresa en el sistema LABORA.
       requestBody:
         required: true
         content:
@@ -187,6 +196,7 @@ paths:
       tags:
         - empresas
       summary: Listar empresas con filtros opcionales
+      description: Devuelve una lista paginada de empresas con filtros opcionales por sector y clasificación.
       parameters:
         - $ref: '#/components/parameters/Pagina'
         - $ref: '#/components/parameters/TamanoPagina'
@@ -222,6 +232,7 @@ paths:
       tags:
         - empresas
       summary: Obtener una empresa por su CIF
+      description: Devuelve los datos completos de una empresa. Usado en el Flujo 1 para validar que la empresa está activa antes de publicar una oferta.
       parameters:
         - $ref: '#/components/parameters/IdCIF'
       responses:
@@ -247,7 +258,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/EmpresaInput'
+              $ref: '#/components/schemas/EmpresaUpdateInput'
       responses:
         '200':
           description: Empresa modificada correctamente
@@ -284,7 +295,8 @@ paths:
     post:
       tags:
         - ofertas
-      summary: Crear una nueva oferta de trabajo
+      summary: Publicar una nueva oferta de trabajo
+      description: Crea y publica una oferta de trabajo. Usado en el Flujo 1 tras validar la empresa.
       requestBody:
         required: true
         content:
@@ -313,6 +325,7 @@ paths:
       tags:
         - ofertas
       summary: Listar ofertas filtradas por etiquetas y otros criterios
+      description: Devuelve una lista paginada de ofertas. Permite filtrar por etiquetas para el matching y las suscripciones.
       parameters:
         - $ref: '#/components/parameters/Pagina'
         - $ref: '#/components/parameters/TamanoPagina'
@@ -361,6 +374,7 @@ paths:
       tags:
         - ofertas
       summary: Obtener una oferta por su ID
+      description: Devuelve los datos de una oferta. Usado en el Flujo 2 para obtener los requisitos antes de validar la candidatura.
       parameters:
         - $ref: '#/components/parameters/IdOferta'
       responses:
@@ -386,7 +400,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/OfertaInput'
+              $ref: '#/components/schemas/OfertaUpdateInput'
       responses:
         '200':
           description: Oferta modificada correctamente
@@ -430,12 +444,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CursoInput'
-            example:
-              titulo: "Introducción a la programación"
-              descripcion: "Curso básico de programación orientado a desempleados"
-              fecha_inicio: "2026-05-14"
-              fecha_fin: "2026-12-31"
-              etiquetas: ["informatica", "programacion"]
       responses:
         '201':
           description: Curso creado correctamente
@@ -452,6 +460,7 @@ paths:
       tags:
         - cursos
       summary: Listar cursos con filtros opcionales
+      description: Devuelve el catálogo de cursos disponibles. Usado en el Flujo 5 para que el demandante consulte las etiquetas disponibles antes de suscribirse.
       parameters:
         - $ref: '#/components/parameters/Pagina'
         - $ref: '#/components/parameters/TamanoPagina'
@@ -507,7 +516,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CursoInput'
+              $ref: '#/components/schemas/CursoUpdateInput'
       responses:
         '200':
           description: Curso modificado correctamente
@@ -544,8 +553,8 @@ paths:
     post:
       tags:
         - candidaturas
-      summary: Crear una nueva candidatura
-      description: Crear la candidatura de un usuario en una oferta de trabajo
+      summary: Registrar una nueva candidatura
+      description: Registra la candidatura de un demandante a una oferta de trabajo. Usado en el Flujo 2 tras verificar la elegibilidad.
       requestBody:
         required: true
         content:
@@ -554,19 +563,26 @@ paths:
               $ref: '#/components/schemas/CandidaturaInput'
       responses:
         '201':
-          description: Candidatura creada correctamente
+          description: Candidatura registrada correctamente
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Candidatura'
         '400':
           $ref: '#/components/responses/BadRequest'
+        '409':
+          description: El demandante ya tiene una candidatura activa para esta oferta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalError'
+
     get:
       tags:
         - candidaturas
-      summary: Listar candidaturas de una oferta
+      summary: Listar candidaturas con filtros opcionales
       parameters:
         - $ref: '#/components/parameters/Pagina'
         - $ref: '#/components/parameters/TamanoPagina'
@@ -582,6 +598,12 @@ paths:
           schema:
             type: string
             example: "12345678A"
+        - name: estado
+          in: query
+          description: Filtrar por estado de la candidatura
+          schema:
+            type: string
+            enum: [PENDIENTE, PRESELECCIONADO, RECHAZADO, ACEPTADO]
       responses:
         '200':
           description: Listado de candidaturas obtenido correctamente
@@ -589,8 +611,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CandidaturaListResponse'
-        '404':
-          $ref: '#/components/responses/NotFound' 
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -616,7 +636,8 @@ paths:
     put:
       tags:
         - candidaturas
-      summary: Modificar los datos de una candidatura
+      summary: Modificar el estado de una candidatura
+      description: Permite actualizar el estado de una candidatura. Usado para marcar una candidatura como aceptada o rechazada.
       parameters:
         - $ref: '#/components/parameters/IdCandidatura'
       requestBody:
@@ -624,7 +645,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CandidaturaInput'
+              $ref: '#/components/schemas/CandidaturaUpdateInput'
       responses:
         '200':
           description: Candidatura modificada correctamente
@@ -652,27 +673,213 @@ paths:
           $ref: '#/components/responses/NotFound'
         '500':
           $ref: '#/components/responses/InternalError'
-     
+
   # ─────────────────────────────────────────
-  # MATCHING
+  # SUSCRIPCIONES
   # ─────────────────────────────────────────
- 
-  /matching/{id}:
-    get:
+
+  /suscripciones:
+    post:
       tags:
-        - matching
-      summary: Obtener la mejor candidatura dada una oferta
-      parameters:
-        - $ref: '#/components/parameters/IdOferta'
+        - suscripciones
+      summary: Registrar una nueva suscripción
+      description: Registra las preferencias de un demandante por etiquetas para recibir notificaciones de nuevas ofertas o cursos. Usado en el Flujo 5.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuscripcionInput'
       responses:
-        '200':
-          description: Matching realizado correctamente
+        '201':
+          description: Suscripción registrada correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Candidatura'
+                $ref: '#/components/schemas/Suscripcion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No existe ningún usuario con ese NIF/NIE
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    get:
+      tags:
+        - suscripciones
+      summary: Listar suscripciones con filtros opcionales
+      parameters:
+        - $ref: '#/components/parameters/Pagina'
+        - $ref: '#/components/parameters/TamanoPagina'
+        - name: id_usuario
+          in: query
+          description: Filtrar suscripciones por usuario
+          schema:
+            type: string
+            example: "12345678A"
+        - name: tipo
+          in: query
+          description: Filtrar por tipo de suscripción
+          schema:
+            type: string
+            enum: [OFERTA, CURSO]
+      responses:
+        '200':
+          description: Listado de suscripciones obtenido correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuscripcionListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /suscripciones/{id}:
+    get:
+      tags:
+        - suscripciones
+      summary: Obtener una suscripción por su ID
+      parameters:
+        - $ref: '#/components/parameters/IdSuscripcion'
+      responses:
+        '200':
+          description: Suscripción encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Suscripcion'
         '404':
           $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - suscripciones
+      summary: Eliminar una suscripción por su ID
+      description: Cancela una suscripción activa del demandante.
+      parameters:
+        - $ref: '#/components/parameters/IdSuscripcion'
+      responses:
+        '200':
+          description: Suscripción eliminada correctamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # ─────────────────────────────────────────
+  # VALIDACION
+  # ─────────────────────────────────────────
+
+  /validacion/usuarios:
+    post:
+      tags:
+        - validacion
+      summary: Validar datos de un usuario
+      description: Valida el formato y completitud de los datos de un nuevo usuario antes de su registro. Usado en el Flujo 4.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidacionUsuarioInput'
+      responses:
+        '200':
+          description: Validación realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /validacion/certificados:
+    post:
+      tags:
+        - validacion
+      summary: Validar tipo de certificado solicitado
+      description: Verifica que el tipo de certificado solicitado existe y es válido para el demandante. Usado en el Flujo 3.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidacionCertificadoInput'
+      responses:
+        '200':
+          description: Validación realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: El tipo de certificado no existe en el sistema
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /validacion/etiquetas:
+    post:
+      tags:
+        - validacion
+      summary: Validar etiquetas de suscripción
+      description: Verifica que las etiquetas seleccionadas por el demandante existen en el sistema. Usado en el Flujo 5.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidacionEtiquetasInput'
+      responses:
+        '200':
+          description: Validación realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /validacion/elegibilidad:
+    post:
+      tags:
+        - validacion
+      summary: Validar elegibilidad de un demandante para una oferta
+      description: Verifica si un demandante cumple los requisitos de una oferta de trabajo antes de registrar su candidatura. Usado en el Flujo 2.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidacionElegibilidadInput'
+      responses:
+        '200':
+          description: Validación de elegibilidad realizada correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidacionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          description: No existe el usuario o la oferta indicada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '500':
           $ref: '#/components/responses/InternalError'
 
@@ -685,7 +892,7 @@ paths:
       tags:
         - notificaciones
       summary: Enviar una nueva notificación
-      description: Envía una notificación a una lista de correos electrónicos.
+      description: Envía una notificación a una lista de destinatarios. Usado transversalmente en todos los flujos.
       requestBody:
         required: true
         content:
@@ -796,6 +1003,24 @@ components:
         type: integer
         example: 1
 
+    IdCandidatura:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la candidatura
+      schema:
+        type: integer
+        example: 1
+
+    IdSuscripcion:
+      name: id
+      in: path
+      required: true
+      description: Identificador único de la suscripción
+      schema:
+        type: integer
+        example: 1
+
     IdNotificacion:
       name: id
       in: path
@@ -804,15 +1029,6 @@ components:
       schema:
         type: integer
         example: 10458
-
-    IdCandidatura:
-      name: id
-      in: path
-      required: true
-      description: Identificador único de la candidatura
-      schema:
-        type: integer
-        example: 12345
 
   # ── RESPUESTAS REUTILIZABLES ──────────────
 
@@ -869,6 +1085,32 @@ components:
         - apellidos
         - email
         - tipo
+      properties:
+        id_nie:
+          type: string
+          description: NIF o NIE del usuario (identificador único)
+          example: "12345678A"
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "García López"
+        email:
+          type: string
+          format: email
+          example: "maria.garcia@email.com"
+        tipo:
+          type: string
+          enum: [DEMANDANTE, REPRESENTANTE, ADMINISTRADOR]
+          example: "DEMANDANTE"
+        activo:
+          type: boolean
+          default: true
+
+    UsuarioUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar un usuario
       properties:
         id_nie:
           type: string
@@ -954,6 +1196,38 @@ components:
           enum: [MICRO, PEQUEÑA, MEDIANA, GRANDE]
           example: "PEQUEÑA"
 
+    EmpresaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una empresa
+      properties:
+        cif:
+          type: string
+          example: "B12345678"
+        nombre:
+          type: string
+          example: "TechSolutions SL"
+        razon_social:
+          type: string
+          example: "TechSolutions Sociedad Limitada"
+        correo:
+          type: string
+          format: email
+          example: "contacto@techsolutions.es"
+        telefono:
+          type: string
+          example: "965123456"
+        fecha_constitucion:
+          type: string
+          format: date
+          example: "2010-03-15"
+        sector:
+          type: string
+          example: "Tecnología"
+        clasificacion:
+          type: string
+          enum: [MICRO, PEQUEÑA, MEDIANA, GRANDE]
+          example: "PEQUEÑA"
+
     Empresa:
       allOf:
         - $ref: '#/components/schemas/EmpresaInput'
@@ -983,8 +1257,39 @@ components:
         - titulo
         - descripcion
         - duracion_contrato
-        - estado
         - etiquetas
+      properties:
+        cif_empresa:
+          type: string
+          example: "B12345678"
+        titulo:
+          type: string
+          example: "Desarrollador Full Stack"
+        descripcion:
+          type: string
+          example: "Buscamos desarrollador con experiencia en React y Node.js"
+        duracion_contrato:
+          type: string
+          enum: [INDEFINIDO, TEMPORAL, ALTERNANCIA, PRACTICAS]
+          example: "INDEFINIDO"
+        estado:
+          type: string
+          enum: [ACTIVA, CERRADA, PAUSADA]
+          default: ACTIVA
+          example: "ACTIVA"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion", "fullstack"]
+        fecha_publicacion:
+          type: string
+          format: date
+          example: "2026-05-14"
+
+    OfertaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una oferta
       properties:
         cif_empresa:
           type: string
@@ -1067,6 +1372,30 @@ components:
             type: string
           example: ["informatica", "programacion"]
 
+    CursoUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar un curso
+      properties:
+        titulo:
+          type: string
+          example: "Introducción a la programación"
+        descripcion:
+          type: string
+          example: "Curso básico de programación orientado a desempleados"
+        fecha_inicio:
+          type: string
+          format: date
+          example: "2026-05-14"
+        fecha_fin:
+          type: string
+          format: date
+          example: "2026-12-31"
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion"]
+
     Curso:
       allOf:
         - $ref: '#/components/schemas/CursoInput'
@@ -1098,28 +1427,59 @@ components:
 
     CandidaturaInput:
       type: object
+      description: Datos necesarios para registrar una candidatura
       required:
         - id_candidato
         - id_oferta
-        - fecha_publicacion
       properties:
         id_candidato:
           type: string
-          description: NIF/NIE del candidato
+          description: NIF/NIE del demandante candidato
           example: "12345678A"
         id_oferta:
           type: string
-          description: Identificador de la oferta
+          description: Identificador de la oferta a la que se aplica
           example: "OFE-2026-001"
-        fecha_publicacion:
+        estado:
+          type: string
+          description: Estado de la candidatura
+          enum: [PENDIENTE, PRESELECCIONADO, RECHAZADO, ACEPTADO]
+          default: PENDIENTE
+          example: "PENDIENTE"
+        fecha_aplicacion:
           type: string
           format: date
+          description: Fecha en la que se registra la candidatura
+          example: "2026-05-14"
+
+    CandidaturaUpdateInput:
+      type: object
+      description: Datos opcionales para actualizar una candidatura
+      properties:
+        id_candidato:
+          type: string
+          description: NIF/NIE del demandante candidato
+          example: "12345678A"
+        id_oferta:
+          type: string
+          description: Identificador de la oferta a la que se aplica
+          example: "OFE-2026-001"
+        estado:
+          type: string
+          description: Estado de la candidatura
+          enum: [PENDIENTE, PRESELECCIONADO, RECHAZADO, ACEPTADO]
+          default: PENDIENTE
+          example: "PENDIENTE"
+        fecha_aplicacion:
+          type: string
+          format: date
+          description: Fecha en la que se registra la candidatura
           example: "2026-05-14"
 
     Candidatura:
       allOf:
         - $ref: '#/components/schemas/CandidaturaInput'
-      description: Curso completo tal como se almacena en el sistema
+      description: Candidatura completa tal como se almacena en el sistema
       properties:
         id:
           type: integer
@@ -1138,6 +1498,148 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Candidatura'
+
+    # ── SUSCRIPCIONES ──
+
+    SuscripcionInput:
+      type: object
+      description: Datos necesarios para registrar una suscripción de un demandante
+      required:
+        - id_usuario
+        - tipo
+        - etiquetas
+      properties:
+        id_usuario:
+          type: string
+          description: NIF/NIE del demandante que se suscribe
+          example: "12345678A"
+        tipo:
+          type: string
+          description: Tipo de suscripción (a ofertas de trabajo o a cursos de formación)
+          enum: [OFERTA, CURSO]
+          example: "OFERTA"
+        etiquetas:
+          type: array
+          description: Lista de etiquetas de interés seleccionadas por el demandante
+          items:
+            type: string
+          example: ["informatica", "programacion"]
+
+    Suscripcion:
+      allOf:
+        - $ref: '#/components/schemas/SuscripcionInput'
+      description: Suscripción completa tal como se almacena en el sistema
+      properties:
+        id:
+          type: integer
+          example: 1
+        fecha_suscripcion:
+          type: string
+          format: date
+          example: "2026-05-14"
+        activa:
+          type: boolean
+          default: true
+
+    SuscripcionListResponse:
+      type: object
+      properties:
+        total:
+          type: integer
+          example: 10
+        pagina:
+          type: integer
+          example: 1
+        resultados:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suscripcion'
+
+    # ── VALIDACION ──
+
+    ValidacionUsuarioInput:
+      type: object
+      description: Datos del usuario a validar antes del registro
+      required:
+        - id_nie
+        - nombre
+        - apellidos
+        - email
+      properties:
+        id_nie:
+          type: string
+          example: "12345678A"
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "García López"
+        email:
+          type: string
+          format: email
+          example: "maria.garcia@email.com"
+
+    ValidacionCertificadoInput:
+      type: object
+      description: Datos del certificado a validar antes de su generación
+      required:
+        - id_usuario
+        - tipo_certificado
+      properties:
+        id_usuario:
+          type: string
+          description: NIF/NIE del demandante solicitante
+          example: "12345678A"
+        tipo_certificado:
+          type: string
+          description: Tipo de certificado solicitado
+          example: "CERTIFICADO_PROFESIONALIDAD"
+        motivo:
+          type: string
+          description: Motivo de la solicitud del certificado
+          example: "Acreditación para proceso de selección"
+
+    ValidacionEtiquetasInput:
+      type: object
+      description: Lista de etiquetas a validar antes de registrar una suscripción
+      required:
+        - etiquetas
+      properties:
+        etiquetas:
+          type: array
+          items:
+            type: string
+          example: ["informatica", "programacion"]
+
+    ValidacionElegibilidadInput:
+      type: object
+      description: Datos para verificar si un demandante es elegible para una oferta
+      required:
+        - id_usuario
+        - id_oferta
+      properties:
+        id_usuario:
+          type: string
+          description: NIF/NIE del demandante candidato
+          example: "12345678A"
+        id_oferta:
+          type: string
+          description: Identificador de la oferta
+          example: "OFE-2026-001"
+
+    ValidacionResponse:
+      type: object
+      description: Resultado de cualquier operación de validación
+      properties:
+        valido:
+          type: boolean
+          description: Indica si la validación ha sido satisfactoria
+          example: true
+        motivo:
+          type: string
+          description: Descripción del resultado o motivo del rechazo si no es válido
+          example: "Todos los datos son correctos"
 
     # ── NOTIFICACIONES ──
 
@@ -1163,7 +1665,7 @@ components:
           example: "Su certificado ha sido generado correctamente y ya puede descargarlo."
         tipo:
           type: string
-          enum: [OFERTA, CERTIFICADO, ESTADO_CANDIDATURA, ALERTA]
+          enum: [OFERTA, CERTIFICADO, ESTADO_CANDIDATURA, SUSCRIPCION, ALERTA]
           example: "CERTIFICADO"
 
     Notificacion:
