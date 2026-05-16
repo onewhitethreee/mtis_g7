@@ -130,19 +130,19 @@ const validacionUsuariosPOST = ({ validacionUsuarioInput, body }) => new Promise
   async (resolve, reject) => {
     try {
       const data = validacionUsuarioInput || body;
-      const { nombre, apellidos, email, id } = data;
+      const { nombre, apellidos, email, id_nie } = data;
 
       const errores = [];
       if (!nombre || nombre.trim() === '') errores.push('Nombre requerido');
       if (!apellidos || apellidos.trim() === '') errores.push('Apellidos requeridos');
       if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) errores.push('Email inválido');
-      if (!id || id.trim() === '') errores.push('NIF/NIE requerido');
+      if (!id_nie || id_nie.trim() === '') errores.push('NIF/NIE requerido');
 
       if (errores.length > 0) {
         return reject(Service.rejectResponse(errores.join(', '), 400));
       }
 
-      const [usuarioExistente] = await pool.query('SELECT * FROM usuario WHERE id_nie = ? OR email = ?', [id, email]);
+      const [usuarioExistente] = await pool.query('SELECT * FROM usuario WHERE id_nie = ? OR email = ?', [id_nie, email]);
       if (usuarioExistente.length > 0) {
         return reject(Service.rejectResponse('Usuario o email ya existe', 400));
       }
