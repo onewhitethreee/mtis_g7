@@ -1,17 +1,6 @@
 /* eslint-disable no-unused-vars */
-const mysql = require('mysql2/promise');
+const pool = require('./db');
 const Service = require('./Service');
-
-const pool = mysql.createPool({
-  host: '127.0.0.1',
-  user: 'root',
-  password: 'root',
-  port: 3307,
-  database: 'labora',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
 
 /**
 * Validar tipo de certificado solicitado
@@ -45,7 +34,7 @@ const validacionCertificadosPOST = ({ validacionCertificadoInput, body }) => new
         mensaje: 'Usuario elegible para certificado',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -94,7 +83,7 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput, body }) => ne
         mensaje: cumpleRequisitos ? 'Usuario cumple requisitos' : 'Usuario no cumple requisitos',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -126,7 +115,7 @@ const validacionEtiquetasPOST = ({ validacionEtiquetasInput, body }) => new Prom
         mensaje: etiquetasValidas ? 'Todas las etiquetas son válidas' : 'Algunas etiquetas no son válidas',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -163,7 +152,7 @@ const validacionUsuariosPOST = ({ validacionUsuarioInput, body }) => new Promise
         mensaje: 'Datos de usuario válidos',
       }));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );

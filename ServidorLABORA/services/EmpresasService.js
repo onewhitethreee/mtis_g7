@@ -1,17 +1,6 @@
 /* eslint-disable no-unused-vars */
-const mysql = require('mysql2/promise');
+const pool = require('./db');
 const Service = require('./Service');
-
-const pool = mysql.createPool({
-  host: '127.0.0.1',
-  user: 'root',
-  password: 'root',
-  port: 3307,
-  database: 'labora',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
 
 const filterMap = {
   search: 'nombre',
@@ -48,7 +37,7 @@ const empresasCifDELETE = ({ cif }) => new Promise(
       }
       resolve(Service.successResponse({ cif }));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -62,7 +51,7 @@ const empresasCifGET = ({ cif }) => new Promise(
       }
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -89,7 +78,7 @@ const empresasCifPUT = ({ cif, empresaInput, body }) => new Promise(
 
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -108,7 +97,7 @@ const empresasGET = ({ p = 1, s = 10, q, search, sector, clasificacion }) => new
 
       resolve(Service.successResponse(rows));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
@@ -134,7 +123,7 @@ const empresasPOST = ({ empresaInput, body }) => new Promise(
       const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
-      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
+      reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 500));
     }
   },
 );
