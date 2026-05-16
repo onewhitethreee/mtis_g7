@@ -29,7 +29,7 @@ const validacionCertificadosPOST = ({ validacionCertificadoInput }) => new Promi
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
       }
 
-      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id_usuario]);
+      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id_nie = ?', [id_usuario]);
       if (!usuario.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
@@ -64,7 +64,7 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Prom
         return reject(Service.rejectResponse('Datos de validación incompletos', 400));
       }
 
-      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id = ?', [id_usuario]);
+      const [usuario] = await pool.query('SELECT * FROM usuario WHERE id_nie = ?', [id_usuario]);
       if (!usuario.length) {
         return reject(Service.rejectResponse('Usuario no encontrado', 404));
       }
@@ -74,10 +74,18 @@ const validacionElegibilidadPOST = ({ validacionElegibilidadInput }) => new Prom
         return reject(Service.rejectResponse('Oferta no encontrada', 404));
       }
 
-      const usuarioData = usuario[0];
-      const ofertaData = oferta[0];
+      const [ofertaEtiquetas] = await pool.query(
+        'SELECT e.nombre FROM etiqueta e INNER JOIN oferta_etiqueta oe ON e.id = oe.id_etiqueta WHERE oe.id_oferta = ?',
+        [id_oferta],
+      );
+      const [usuarioEtiquetas] = await pool.query(
+        'SELECT e.nombre FROM etiqueta e INNER JOIN suscripcion_etiqueta se ON e.id = se.id_etiqueta INNER JOIN suscripcion s ON se.id_suscripcion = s.id WHERE s.id_usuario = ? AND s.activa = 1',
+        [id_usuario],
+      );
 
-      const cumpleRequisitos = usuarioData.etiquetas && usuarioData.etiquetas.includes(ofertaData.etiquetas);
+      const ofertaTags = ofertaEtiquetas.map((row) => row.nombre);
+      const usuarioTags = usuarioEtiquetas.map((row) => row.nombre);
+      const cumpleRequisitos = ofertaTags.some((tag) => usuarioTags.includes(tag));
 
       resolve(Service.successResponse({
         valido: cumpleRequisitos,
@@ -141,7 +149,7 @@ const validacionUsuariosPOST = ({ validacionUsuarioInput }) => new Promise(
         return reject(Service.rejectResponse(errores.join(', '), 400));
       }
 
-      const [usuarioExistente] = await pool.query('SELECT * FROM usuario WHERE id = ? OR email = ?', [id, email]);
+      const [usuarioExistente] = await pool.query('SELECT * FROM usuario WHERE id_nie = ? OR email = ?', [id, email]);
       if (usuarioExistente.length > 0) {
         return reject(Service.rejectResponse('Usuario o email ya existe', 400));
       }

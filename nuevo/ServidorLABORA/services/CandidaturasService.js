@@ -14,8 +14,8 @@ const pool = mysql.createPool({
 });
 
 const filterMap = {
-  idUnderscoreoferta: 'id_oferta',
-  idUnderscorecandidato: 'id_candidato',
+  id_oferta: 'id_oferta',
+  id_candidato: 'id_candidato',
   estado: 'estado',
 };
 
@@ -34,14 +34,14 @@ const buildFilterClause = (filters) => {
   };
 };
 
-const candidaturasGET = ({ p = 1, s = 10, idUnderscoreoferta, idUnderscorecandidato, estado }) => new Promise(
+const candidaturasGET = ({ p = 1, s = 10, id_oferta, id_candidato, estado }) => new Promise(
   async (resolve, reject) => {
     try {
       const page = Number(p) > 0 ? Number(p) : 1;
       const size = Number(s) > 0 ? Number(s) : 10;
       const offset = (page - 1) * size;
 
-      const filter = buildFilterClause({ idUnderscoreoferta, idUnderscorecandidato, estado });
+      const filter = buildFilterClause({ id_oferta, id_candidato, estado });
       const query = `SELECT * FROM candidatura ${filter.clause} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 

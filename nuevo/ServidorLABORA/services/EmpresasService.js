@@ -99,10 +99,10 @@ const empresasGET = ({ p = 1, s = 10, q, search, sector, clasificacion }) => new
       const page = Number(p) > 0 ? Number(p) : 1;
       const size = Number(s) > 0 ? Number(s) : 10;
       const offset = (page - 1) * size;
-      const order = q === 'desc' ? 'DESC' : 'ASC';
+      const order = q === 'descendente' ? 'DESC' : 'ASC';
 
       const filter = buildFilterClause({ search, sector, clasificacion });
-      const query = `SELECT * FROM empresa ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const query = `SELECT * FROM empresa ${filter.clause} ORDER BY fecha_constitucion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -128,7 +128,8 @@ const empresasPOST = ({ empresaInput }) => new Promise(
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [result.insertId]);
+      const insertId = empresaInput.cif || result.insertId;
+      const [rows] = await pool.query('SELECT * FROM empresa WHERE cif = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));

@@ -14,48 +14,53 @@ const pool = mysql.createPool({
 });
 
 const filterMap = {
-  search: 'titulo',
-  etiquetas: 'etiquetas',
-  estado: 'estado',
-  cifUnderscoreempresa: 'cif_empresa',
-  duracionUnderscorecontrato: 'duracion_contrato',
+  estado: 'o.estado',
+  cif_empresa: 'o.cif_empresa',
+  duracion_contrato: 'o.duracion_contrato',
 };
 
 const buildFilterClause = (filters) => {
   const clauses = [];
   const values = [];
+  let join = '';
+  let groupBy = '';
   Object.entries(filters).forEach(([key, value]) => {
     if (value === undefined || value === null || value === '') return;
-    const column = filterMap[key] || key;
     if (key === 'search') {
-      clauses.push(`(${column} LIKE ? OR descripcion LIKE ?)`);
+      clauses.push('(o.titulo LIKE ? OR o.descripcion LIKE ?)');
       values.push(`%${value}%`, `%${value}%`);
     } else if (key === 'etiquetas') {
-      const tags = value.split(',').map((tag) => tag.trim());
-      const placeholders = tags.map(() => 'etiquetas LIKE ?').join(' OR ');
-      clauses.push(`(${placeholders})`);
-      tags.forEach((tag) => values.push(`%${tag}%`));
+      const tags = String(value).split(',').map((tag) => tag.trim()).filter(Boolean);
+      if (!tags.length) return;
+      join = 'INNER JOIN oferta_etiqueta oe ON o.id = oe.id_oferta INNER JOIN etiqueta e ON oe.id_etiqueta = e.id';
+      const placeholders = tags.map(() => '?').join(',');
+      clauses.push(`e.nombre IN (${placeholders})`);
+      values.push(...tags);
+      groupBy = `GROUP BY o.id HAVING COUNT(DISTINCT e.nombre) = ${tags.length}`;
     } else {
+      const column = filterMap[key] || `o.${key}`;
       clauses.push(`${column} = ?`);
       values.push(value);
     }
   });
   return {
+    join,
     clause: clauses.length ? `WHERE ${clauses.join(' AND ')}` : '',
+    groupBy,
     values,
   };
 };
 
-const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato }) => new Promise(
+const ofertasGET = ({ p = 1, s = 10, q, search, etiquetas, estado, cif_empresa, duracion_contrato }) => new Promise(
   async (resolve, reject) => {
     try {
       const page = Number(p) > 0 ? Number(p) : 1;
       const size = Number(s) > 0 ? Number(s) : 10;
       const offset = (page - 1) * size;
-      const order = q === 'desc' ? 'DESC' : 'ASC';
+      const order = q === 'descendente' ? 'DESC' : 'ASC';
 
-      const filter = buildFilterClause({ search, etiquetas, estado, cifUnderscoreempresa, duracionUnderscorecontrato });
-      const query = `SELECT * FROM oferta ${filter.clause} ORDER BY fecha_creacion ${order} LIMIT ? OFFSET ?`;
+      const filter = buildFilterClause({ search, etiquetas, estado, cif_empresa, duracion_contrato });
+      const query = `SELECT o.* FROM oferta o ${filter.join} ${filter.clause} ${filter.groupBy} ORDER BY o.fecha_publicacion ${order} LIMIT ? OFFSET ?`;
       const [rows] = await pool.query(query, [...filter.values, size, offset]);
 
       resolve(Service.successResponse(rows));
@@ -135,7 +140,8 @@ const ofertasPOST = ({ ofertaInput }) => new Promise(
         values,
       );
 
-      const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [result.insertId]);
+      const insertId = ofertaInput.id || result.insertId;
+      const [rows] = await pool.query('SELECT * FROM oferta WHERE id = ?', [insertId]);
       resolve(Service.successResponse(rows[0]));
     } catch (e) {
       reject(Service.rejectResponse(e.message || 'Invalid input', e.status || 405));
