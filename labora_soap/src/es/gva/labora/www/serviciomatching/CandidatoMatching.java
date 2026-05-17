@@ -20,7 +20,7 @@
         /* This type was generated from the piece of schema that had
                 name = CandidatoMatching
                 Namespace URI = http://www.labora.gva.es/ServicioMatching/
-                Namespace Prefix = ns3
+                Namespace Prefix = ns1
                 */
             
 
@@ -330,7 +330,7 @@
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if(namespace.equals("http://www.labora.gva.es/ServicioMatching/")){
-                return "ns3";
+                return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
         }

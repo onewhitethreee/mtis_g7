@@ -21,7 +21,7 @@
                 public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName(
                 "http://www.labora.gva.es/ServicioMatching/",
                 "EjecutarMatchingResponse",
-                "ns3");
+                "ns1");
 
             
 
@@ -96,86 +96,6 @@
 
                                }
                             
-
-                        /**
-                        * field for Candidatos
-                        * This was an Array!
-                        */
-
-                        
-                                    protected es.gva.labora.www.serviciomatching.CandidatoMatching[] localCandidatos ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localCandidatosTracker = false ;
-
-                           public boolean isCandidatosSpecified(){
-                               return localCandidatosTracker;
-                           }
-
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return es.gva.labora.www.serviciomatching.CandidatoMatching[]
-                           */
-                           public  es.gva.labora.www.serviciomatching.CandidatoMatching[] getCandidatos(){
-                               return localCandidatos;
-                           }
-
-                           
-                        
-
-
-                               
-                              /**
-                               * validate the array for Candidatos
-                               */
-                              protected void validateCandidatos(es.gva.labora.www.serviciomatching.CandidatoMatching[] param){
-                             
-                              }
-
-
-                             /**
-                              * Auto generated setter method
-                              * @param param Candidatos
-                              */
-                              public void setCandidatos(es.gva.labora.www.serviciomatching.CandidatoMatching[] param){
-                              
-                                   validateCandidatos(param);
-
-                               localCandidatosTracker = param != null;
-                                      
-                                      this.localCandidatos=param;
-                              }
-
-                               
-                             
-                             /**
-                             * Auto generated add method for the array for convenience
-                             * @param param es.gva.labora.www.serviciomatching.CandidatoMatching
-                             */
-                             public void addCandidatos(es.gva.labora.www.serviciomatching.CandidatoMatching param){
-                                   if (localCandidatos == null){
-                                   localCandidatos = new es.gva.labora.www.serviciomatching.CandidatoMatching[]{};
-                                   }
-
-                            
-                                 //update the setting tracker
-                                localCandidatosTracker = true;
-                            
-
-                               java.util.List list =
-                            org.apache.axis2.databinding.utils.ConverterUtil.toList(localCandidatos);
-                               list.add(param);
-                               this.localCandidatos =
-                             (es.gva.labora.www.serviciomatching.CandidatoMatching[])list.toArray(
-                            new es.gva.labora.www.serviciomatching.CandidatoMatching[list.size()]);
-
-                             }
-                             
 
      
      
@@ -266,25 +186,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                             } if (localCandidatosTracker){
-                                       if (localCandidatos!=null){
-                                            for (int i = 0;i < localCandidatos.length;i++){
-                                                if (localCandidatos[i] != null){
-                                                 localCandidatos[i].serialize(new javax.xml.namespace.QName("","candidatos"),
-                                                           xmlWriter);
-                                                } else {
-                                                   
-                                                        // we don't have to do any thing since minOccures is zero
-                                                    
-                                                }
-
-                                            }
-                                     } else {
-                                        
-                                               throw new org.apache.axis2.databinding.ADBException("candidatos cannot be null!!");
-                                        
-                                    }
-                                 }
+                             }
                     xmlWriter.writeEndElement();
                
 
@@ -292,7 +194,7 @@
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if(namespace.equals("http://www.labora.gva.es/ServicioMatching/")){
-                return "ns3";
+                return "ns1";
             }
             return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
         }
@@ -484,28 +386,7 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("mensaje cannot be null!!");
                                         }
-                                    } if (localCandidatosTracker){
-                             if (localCandidatos!=null) {
-                                 for (int i = 0;i < localCandidatos.length;i++){
-
-                                    if (localCandidatos[i] != null){
-                                         elementList.add(new javax.xml.namespace.QName("",
-                                                                          "candidatos"));
-                                         elementList.add(localCandidatos[i]);
-                                    } else {
-                                        
-                                                // nothing to do
-                                            
                                     }
-
-                                 }
-                             } else {
-                                 
-                                        throw new org.apache.axis2.databinding.ADBException("candidatos cannot be null!!");
-                                    
-                             }
-
-                        }
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -581,8 +462,6 @@
                     
                     reader.next();
                 
-                        java.util.ArrayList list3 = new java.util.ArrayList();
-                    
                                     
                                     while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
                                 
@@ -626,52 +505,6 @@
                                               
                                         reader.next();
                                     
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("","candidatos").equals(reader.getName())){
-                                
-                                    
-                                    
-                                    // Process the array and step past its final element's end.
-                                    list3.add(es.gva.labora.www.serviciomatching.CandidatoMatching.Factory.parse(reader));
-                                                                
-                                                        //loop until we find a start element that is not part of this array
-                                                        boolean loopDone3 = false;
-                                                        while(!loopDone3){
-                                                            // We should be at the end element, but make sure
-                                                            while (!reader.isEndElement())
-                                                                reader.next();
-                                                            // Step out of this element
-                                                            reader.next();
-                                                            // Step to next element event.
-                                                            while (!reader.isStartElement() && !reader.isEndElement())
-                                                                reader.next();
-                                                            if (reader.isEndElement()){
-                                                                //two continuous end elements means we are exiting the xml structure
-                                                                loopDone3 = true;
-                                                            } else {
-                                                                if (new javax.xml.namespace.QName("","candidatos").equals(reader.getName())){
-                                                                    list3.add(es.gva.labora.www.serviciomatching.CandidatoMatching.Factory.parse(reader));
-                                                                        
-                                                                }else{
-                                                                    loopDone3 = true;
-                                                                }
-                                                            }
-                                                        }
-                                                        // call the converter utility  to convert and set the array
-                                                        
-                                                        object.setCandidatos((es.gva.labora.www.serviciomatching.CandidatoMatching[])
-                                                            org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
-                                                                es.gva.labora.www.serviciomatching.CandidatoMatching.class,
-                                                                list3));
-                                                            
                               }  // End of if for expected property start element
                                 
                                     else {
