@@ -1,0 +1,905 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+		http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+		http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     CONFIGURACIONES GLOBALES
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<http:listener-config name="HTTP_Listener_Config" doc:name="HTTP Listener config">
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+
+	<http:request-config name="HTTP_Request_REST_API" doc:name="HTTP Request configuration" basePath="/api/v1">
+		<http:request-connection host="localhost" port="8080" />
+	</http:request-config>
+
+	<wsc:config name="WSC_ServicioMatching" doc:name="Web Service Consumer Config">
+		<wsc:connection wsdlLocation="ServicioMatching.wsdl" service="ServicioMatching" port="ServicioMatching" address="http://localhost:9098/ServicioMatching" />
+	</wsc:config>
+
+	<wsc:config name="WSC_ServicioIdentidad" doc:name="Web Service Consumer Config">
+		<wsc:connection wsdlLocation="ServicioIdentidad.wsdl" service="ServicioIdentidad" port="ServicioIdentidad" address="http://localhost:9098/ServicioIdentidad" />
+	</wsc:config>
+
+	<wsc:config name="WSC_ServicioCertificados" doc:name="Web Service Consumer Config">
+		<wsc:connection wsdlLocation="ServicioCertificados.wsdl" service="ServicioCertificados" port="ServicioCertificados" address="http://localhost:9098/ServicioCertificados" />
+	</wsc:config>
+
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     PROCESO 1: PUBLICAR OFERTA DE TRABAJO
+	     Diagrama: Empresa rellena formulario → LABORA valida empresa
+	     y formulario → ¿Cumple requisitos? → Sí: Almacenar Oferta →
+	     Ejecutar Matching → Notificar Demandantes → Notificar Aprobación
+	                                              → No: Notificar Rechazo
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<flow name="Orquestacion_PublicarOfertaFlow">
+		<http:listener doc:name="POST /orquestacion/ofertas" config-ref="HTTP_Listener_Config"
+			path="/orquestacion/ofertas" allowedMethods="POST"/>
+
+		<!-- Paso 1: Guardar petición original -->
+		<set-variable value="#[payload]" doc:name="Guardar Petición Original" variableName="ofertaOriginal"/>
+
+		<!-- Paso 2: Obtener datos de la empresa (GET /empresas/{cif}) -->
+		<http:request method="GET" doc:name="GET /empresas/{cif}" config-ref="HTTP_Request_REST_API" path="/empresas/{cif}">
+			<http:uri-params><![CDATA[#[output application/java --- { "cif" : vars.ofertaOriginal.cif_empresa }]]]></http:uri-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200,404"/>
+			</http:response-validator>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="Guardar Datos Empresa" variableName="datosEmpresa"/>
+		<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Empresa" variableName="statusEmpresa"/>
+
+		<!-- Paso 3: Validar los datos de la oferta (POST /validacion/ofertas) -->
+		<ee:transform doc:name="Preparar Payload Validación Oferta">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "titulo":            vars.ofertaOriginal.titulo,
+  "descripcion":      vars.ofertaOriginal.descripcion,
+  "duracion_contrato": vars.ofertaOriginal.duracion_contrato,
+  "cif_empresa":      vars.ofertaOriginal.cif_empresa
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="POST /validacion/ofertas" config-ref="HTTP_Request_REST_API" path="/validacion/ofertas">
+			<http:response-validator>
+				<http:success-status-code-validator values="200,422"/>
+			</http:response-validator>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="Guardar Resultado Validación Oferta" variableName="validacionOferta"/>
+		<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Validación Oferta" variableName="statusValidacionOferta"/>
+
+		<!-- Paso 4 (CHOICE): ¿Cumple requisitos? empresa activa + oferta válida -->
+		<choice doc:name="¿Cumple Requisitos? (Empresa activa y oferta válida)">
+
+			<!-- RAMA SÍ: empresa encontrada (200) y oferta válida (200) -->
+			<when expression="#[vars.statusEmpresa == 200 and vars.datosEmpresa.estado == 'activa' and vars.statusValidacionOferta == 200 and vars.validacionOferta.valida == true]">
+
+				<!-- Paso 5: Almacenar oferta (POST /ofertas) -->
+				<http:request method="POST" doc:name="POST /ofertas" config-ref="HTTP_Request_REST_API" path="/ofertas">
+					<http:body><![CDATA[#[vars.ofertaOriginal]]]></http:body>
+				</http:request>
+				<set-variable value="#[payload.id]" doc:name="Guardar ID Oferta" variableName="idOferta"/>
+
+				<!-- Paso 6: Ejecutar Matching (SOAP) -->
+				<ee:transform doc:name="Mapear SOAP EjecutarMatching">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns mat http://www.labora.gva.es/ServicioMatching/
+---
+{
+  mat#EjecutarMatching: {
+    id_oferta:       vars.idOferta,
+    max_candidatos:  10,
+    puntuacion_minima: 50.0
+  }
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<wsc:consume doc:name="SOAP: EjecutarMatching" config-ref="WSC_ServicioMatching" operation="EjecutarMatching"/>
+
+				<!-- Paso 7: Notificar a demandantes compatibles -->
+				<ee:transform doc:name="Preparar Notificación Demandantes">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": payload.body.EjecutarMatchingResponse.demandantes_notificar,
+  "asunto":  "Nueva oferta compatible con tu perfil",
+  "mensaje": "Se ha publicado una oferta que puede interesarte. Accede a la plataforma LABORA para consultar los detalles.",
+  "tipo":    "OFERTA"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (demandantes)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+				<!-- Paso 8: Notificar aprobación a la empresa -->
+				<ee:transform doc:name="Preparar Notificación Aprobación Empresa">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.ofertaOriginal.email_empresa],
+  "asunto":  "Oferta publicada",
+  "mensaje": "Su oferta ha sido procesada y publicada con éxito.",
+  "tipo":    "OFERTA"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (empresa aprobación)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+			</when>
+
+			<!-- RAMA NO: empresa inactiva / no encontrada o datos de oferta inválidos → Notificar Rechazo -->
+			<otherwise>
+				<ee:transform doc:name="Preparar Notificación Rechazo Empresa">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.ofertaOriginal.email_empresa],
+  "asunto":  "Oferta rechazada",
+  "mensaje": "Su solicitud de publicación de oferta no ha podido ser procesada. Verifique que la empresa está activa y que los datos de la oferta son correctos.",
+  "tipo":    "OFERTA"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (empresa rechazo)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+			</otherwise>
+
+		</choice>
+	</flow>
+
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     PROCESO 2: APLICAR A UNA OFERTA (CANDIDATURA)
+	     Diagrama: Autenticar → ComprobarPrivilegio → Representante: fin
+	                                                → Demandante:
+	               Recibir candidatura → ¿Demandante activo?
+	               → No: Notificar resultado negativo
+	               → Sí: Obtener requisitos oferta → ¿Cumple requisitos?
+	                     → No: Notificar resultado negativo
+	                     → Sí: Registrar candidatura → Notificar empresa
+	                           → Notificar resultado positivo
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<flow name="Orquestacion_AplicarOfertaFlow">
+		<http:listener doc:name="POST /orquestacion/candidaturas" config-ref="HTTP_Listener_Config"
+			path="/orquestacion/candidaturas" allowedMethods="POST"/>
+
+		<!-- Guardar petición original -->
+		<set-variable value="#[payload]" doc:name="Guardar Candidatura Request" variableName="candidaturaReq"/>
+
+		<!-- Paso 1: Autenticar usuario (SOAP: AutenticarUsuario) -->
+		<ee:transform doc:name="Mapear AutenticarUsuario SOAP">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns iden http://www.labora.gva.es/ServicioIdentidad/
+---
+{
+  iden#AutenticarUsuario: {
+    nifnie:    vars.candidaturaReq.nifnie,
+    contrasena: vars.candidaturaReq.contrasena
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="SOAP: AutenticarUsuario" config-ref="WSC_ServicioIdentidad" operation="AutenticarUsuario"/>
+		<set-variable value="#[payload.body.AutenticarUsuarioResponse.autenticado]" doc:name="Guardar Resultado Autenticación" variableName="autenticado"/>
+		<set-variable value="#[payload.body.AutenticarUsuarioResponse.rol]" doc:name="Guardar Rol Usuario" variableName="rolUsuario"/>
+
+		<!-- Paso 2 (CHOICE): Verificar nivel de privilegio: Representante vs Demandante -->
+		<choice doc:name="¿Es Demandante o Representante?">
+
+			<!-- RAMA REPRESENTANTE: terminar sin procesar candidatura -->
+			<when expression="#[vars.autenticado == true and vars.rolUsuario == 'REPRESENTANTE']">
+				<logger level="INFO" doc:name="Log Representante - Sin candidatura" message="Usuario con rol REPRESENTANTE. No se tramita candidatura."/>
+				<ee:transform doc:name="Respuesta Representante">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{ "mensaje": "Los usuarios con rol representante no pueden inscribirse en ofertas." }]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+
+			<!-- RAMA DEMANDANTE: continuar con el flujo de candidatura -->
+			<when expression="#[vars.autenticado == true and vars.rolUsuario == 'DEMANDANTE']">
+
+				<!-- Paso 3: Obtener datos del usuario (GET /usuarios/{id}) -->
+				<http:request method="GET" doc:name="GET /usuarios/{id}" config-ref="HTTP_Request_REST_API" path="/usuarios/{id}">
+					<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.candidaturaReq.usuario_id }]]]></http:uri-params>
+					<http:response-validator>
+						<http:success-status-code-validator values="200,404"/>
+					</http:response-validator>
+				</http:request>
+				<set-variable value="#[payload]" doc:name="Guardar Datos Usuario" variableName="datosUsuario"/>
+				<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Usuario" variableName="statusUsuario"/>
+
+				<!-- Paso 4 (CHOICE): ¿Demandante activo? -->
+				<choice doc:name="¿Demandante Activo?">
+
+					<!-- RAMA SÍ activo: continuar con oferta -->
+					<when expression="#[vars.statusUsuario == 200 and vars.datosUsuario.estado == 'activo']">
+
+						<!-- Paso 5: Obtener datos de la oferta (GET /ofertas/{id}) -->
+						<http:request method="GET" doc:name="GET /ofertas/{id}" config-ref="HTTP_Request_REST_API" path="/ofertas/{id}">
+							<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.candidaturaReq.oferta_id }]]]></http:uri-params>
+							<http:response-validator>
+								<http:success-status-code-validator values="200,404"/>
+							</http:response-validator>
+						</http:request>
+						<set-variable value="#[payload]" doc:name="Guardar Datos Oferta" variableName="datosOferta"/>
+
+						<!-- Paso 6: Verificar elegibilidad (POST /validacion/elegibilidad) -->
+						<ee:transform doc:name="Preparar Validación Elegibilidad">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "usuario_id": vars.candidaturaReq.usuario_id,
+  "oferta_id":  vars.candidaturaReq.oferta_id
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /validacion/elegibilidad" config-ref="HTTP_Request_REST_API" path="/validacion/elegibilidad">
+							<http:response-validator>
+								<http:success-status-code-validator values="200,422"/>
+							</http:response-validator>
+						</http:request>
+						<set-variable value="#[payload]" doc:name="Guardar Resultado Elegibilidad" variableName="resultadoElegibilidad"/>
+						<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Elegibilidad" variableName="statusElegibilidad"/>
+
+						<!-- Paso 6b (CHOICE): ¿Cumple con los requisitos? -->
+						<choice doc:name="¿Cumple con los Requisitos?">
+
+							<!-- RAMA SÍ cumple: registrar candidatura y notificar -->
+							<when expression="#[vars.statusElegibilidad == 200 and vars.resultadoElegibilidad.elegible == true]">
+
+								<!-- Paso 7: Registrar candidatura (POST /candidaturas) -->
+								<ee:transform doc:name="Preparar Candidatura">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "oferta_id":   vars.candidaturaReq.oferta_id,
+  "usuario_id":  vars.candidaturaReq.usuario_id,
+  "comentarios": "Inscripción automatizada desde el ESB Orquestador."
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /candidaturas" config-ref="HTTP_Request_REST_API" path="/candidaturas"/>
+
+								<!-- Paso 8: Notificar a la empresa -->
+								<ee:transform doc:name="Notificar Empresa Nueva Candidatura">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.datosOferta.email_empresa],
+  "asunto":  "Nuevo candidato para su oferta",
+  "mensaje": "Se ha inscrito un nuevo candidato en la oferta ID " ++ (vars.candidaturaReq.oferta_id as String) ++ ".",
+  "tipo":    "ESTADO_CANDIDATURA"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /notificaciones (empresa)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+								<!-- Paso 9: Notificar resultado positivo al demandante -->
+								<ee:transform doc:name="Notificar Resultado Positivo Demandante">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.datosUsuario.email],
+  "asunto":  "Confirmación de Candidatura",
+  "mensaje": "Se ha registrado correctamente su candidatura para la oferta ID " ++ (vars.candidaturaReq.oferta_id as String) ++ ".",
+  "tipo":    "ESTADO_CANDIDATURA"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /notificaciones (demandante positivo)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+							</when>
+
+							<!-- RAMA NO cumple requisitos: notificar resultado negativo -->
+							<otherwise>
+								<ee:transform doc:name="Notificar Resultado Negativo (no cumple requisitos)">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.datosUsuario.email],
+  "asunto":  "Candidatura no procesada",
+  "mensaje": "No cumple los requisitos necesarios para la oferta ID " ++ (vars.candidaturaReq.oferta_id as String) ++ ".",
+  "tipo":    "ESTADO_CANDIDATURA"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /notificaciones (no cumple requisitos)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+							</otherwise>
+
+						</choice>
+
+					</when>
+
+					<!-- RAMA NO activo: notificar resultado negativo -->
+					<otherwise>
+						<ee:transform doc:name="Notificar Resultado Negativo (demandante inactivo)">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.candidaturaReq.email_usuario],
+  "asunto":  "Candidatura no procesada",
+  "mensaje": "Su perfil de demandante no está activo. No es posible procesar la candidatura.",
+  "tipo":    "ESTADO_CANDIDATURA"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (demandante inactivo)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+					</otherwise>
+
+				</choice>
+
+			</when>
+
+			<!-- RAMA autenticación fallida -->
+			<otherwise>
+				<ee:transform doc:name="Respuesta Autenticación Fallida">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{ "mensaje": "Autenticación fallida. Credenciales incorrectas." }]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+
+		</choice>
+	</flow>
+
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     PROCESO 3: SOLICITAR CERTIFICADO
+	     Diagrama: Obtener Datos Demandante → Verificar Estado Demandante
+	               → ¿Demandante activo?
+	                 → No: Notificar Rechazo
+	                 → Sí: Validar Tipo de Certificado → ¿Tipo válido?
+	                       → No: Notificar Rechazo
+	                       → Sí: Solicitar Generación Certificado (SOAP)
+	                             → ¿Certificado generado?
+	                               → No: Notificar Rechazo
+	                               → Sí: Registrar Certificado Generado
+	                                     → Notificar Aprobación
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<flow name="Orquestacion_SolicitarCertificadoFlow">
+		<http:listener doc:name="POST /orquestacion/certificados" config-ref="HTTP_Listener_Config"
+			path="/orquestacion/certificados" allowedMethods="POST"/>
+
+		<!-- Guardar datos de la solicitud -->
+		<set-variable value="#[payload]" doc:name="Guardar Datos Solicitud" variableName="solicitudReq"/>
+
+		<!-- Paso 1: Autenticar usuario (SOAP: AutenticarUsuario) -->
+		<ee:transform doc:name="Mapear AutenticarUsuario">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns iden http://www.labora.gva.es/ServicioIdentidad/
+---
+{
+  iden#AutenticarUsuario: {
+    nifnie:    vars.solicitudReq.nifnie,
+    contrasena: vars.solicitudReq.contrasena
+  }
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="SOAP: AutenticarUsuario" config-ref="WSC_ServicioIdentidad" operation="AutenticarUsuario"/>
+		<set-variable value="#[payload.body.AutenticarUsuarioResponse.autenticado]" doc:name="Guardar Resultado Autenticación" variableName="autenticado"/>
+
+		<!-- Paso 2: Obtener datos del demandante (GET /usuarios/{id}) -->
+		<http:request method="GET" doc:name="GET /usuarios/{id}" config-ref="HTTP_Request_REST_API" path="/usuarios/{id}">
+			<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.solicitudReq.nifnie }]]]></http:uri-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200,404"/>
+			</http:response-validator>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="Guardar Datos Usuario" variableName="datosUsuario"/>
+		<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Usuario" variableName="statusUsuario"/>
+
+		<!-- Paso 3 (CHOICE): ¿Demandante activo? -->
+		<choice doc:name="¿Demandante Activo?">
+
+			<!-- RAMA SÍ activo: validar tipo certificado -->
+			<when expression="#[vars.autenticado == true and vars.statusUsuario == 200 and vars.datosUsuario.estado == 'activo']">
+
+				<!-- Paso 4: Validar tipo de certificado (POST /validacion/certificados) -->
+				<ee:transform doc:name="Preparar Validación Tipo Certificado">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nifnie":           vars.solicitudReq.nifnie,
+  "tipo_certificado": vars.solicitudReq.tipo_certificado
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /validacion/certificados" config-ref="HTTP_Request_REST_API" path="/validacion/certificados">
+					<http:response-validator>
+						<http:success-status-code-validator values="200,422"/>
+					</http:response-validator>
+				</http:request>
+				<set-variable value="#[payload]" doc:name="Guardar Resultado Validación Certificado" variableName="validacionCert"/>
+				<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Validación Certificado" variableName="statusValidacionCert"/>
+
+				<!-- Paso 4b (CHOICE): ¿Tipo de certificado válido? -->
+				<choice doc:name="¿Tipo de Certificado Válido?">
+
+					<!-- RAMA SÍ válido: solicitar generación SOAP -->
+					<when expression="#[vars.statusValidacionCert == 200 and vars.validacionCert.valido == true]">
+
+						<!-- Paso 5: Solicitar generación del certificado (SOAP) -->
+						<ee:transform doc:name="Mapear SolicitarCertificado SOAP">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns cer http://www.labora.gva.es/ServicioCertificados/
+---
+{
+  cer#SolicitarCertificado: {
+    nifnie: vars.solicitudReq.nifnie,
+    tipo:   vars.solicitudReq.tipo_certificado,
+    motivo: vars.solicitudReq.motivo
+  }
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<wsc:consume doc:name="SOAP: SolicitarCertificado" config-ref="WSC_ServicioCertificados" operation="SolicitarCertificado"/>
+						<set-variable value="#[payload.body.SolicitarCertificadoResponse]" doc:name="Guardar Respuesta SOAP Certificado" variableName="respuestaCert"/>
+
+						<!-- Paso 5b (CHOICE): ¿Certificado generado correctamente? -->
+						<choice doc:name="¿Certificado Generado?">
+
+							<!-- RAMA SÍ generado: registrar y notificar aprobación -->
+							<when expression="#[vars.respuestaCert.generado == true]">
+
+								<!-- Paso 6: Registrar certificado generado (POST /certificados) -->
+								<ee:transform doc:name="Preparar Registro Certificado">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nif_ciudadano": vars.solicitudReq.nifnie,
+  "tipo":          vars.solicitudReq.tipo_certificado,
+  "descripcion":   vars.respuestaCert.descripcion,
+  "estado":        "GENERADO"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /certificados" config-ref="HTTP_Request_REST_API" path="/certificados"/>
+
+								<!-- Paso 7: Notificar aprobación al demandante -->
+								<ee:transform doc:name="Notificar Aprobación Certificado">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.solicitudReq.email_usuario],
+  "asunto":  "Certificado generado",
+  "mensaje": "Su trámite ha concluido con éxito. El certificado de tipo " ++ vars.solicitudReq.tipo_certificado ++ " ha sido generado.",
+  "tipo":    "CERTIFICADO"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /notificaciones (aprobación)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+							</when>
+
+							<!-- RAMA NO generado: notificar rechazo -->
+							<otherwise>
+								<ee:transform doc:name="Notificar Rechazo (error generación certificado)">
+									<ee:message>
+										<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.solicitudReq.email_usuario],
+  "asunto":  "Error en generación de certificado",
+  "mensaje": "No ha sido posible generar el certificado solicitado. Por favor, inténtelo de nuevo más tarde.",
+  "tipo":    "CERTIFICADO"
+}]]></ee:set-payload>
+									</ee:message>
+								</ee:transform>
+								<http:request method="POST" doc:name="POST /notificaciones (error generación)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+							</otherwise>
+
+						</choice>
+
+					</when>
+
+					<!-- RAMA NO tipo inválido: notificar rechazo -->
+					<otherwise>
+						<ee:transform doc:name="Notificar Rechazo (tipo certificado inválido)">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.solicitudReq.email_usuario],
+  "asunto":  "Solicitud de certificado rechazada",
+  "mensaje": "El tipo de certificado solicitado no es válido o no está disponible para su perfil.",
+  "tipo":    "CERTIFICADO"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (tipo inválido)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+					</otherwise>
+
+				</choice>
+
+			</when>
+
+			<!-- RAMA NO activo / no autenticado: notificar rechazo -->
+			<otherwise>
+				<ee:transform doc:name="Notificar Rechazo (demandante inactivo o no autenticado)">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.solicitudReq.email_usuario],
+  "asunto":  "Solicitud de certificado rechazada",
+  "mensaje": "No es posible procesar la solicitud. Verifique sus credenciales y que su perfil se encuentra activo.",
+  "tipo":    "CERTIFICADO"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (demandante inactivo)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+			</otherwise>
+
+		</choice>
+	</flow>
+
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     PROCESO 4: ALTA Y REGISTRO DE DEMANDANTE
+	     Diagrama: Comprobar Usuario → ¿Usuario ya existe?
+	               → Sí: Notificar Rechazo → Fin Registro Rechazado
+	               → No: Validar Datos del Formulario → ¿Datos válidos?
+	                     → No: Notificar Rechazo → Fin Registro Rechazado
+	                     → Sí: Crear Usuario → Activar Perfil Demandante
+	                           → Notificar Bienvenida → Fin Registro Completado
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<flow name="Orquestacion_AltaDemandanteFlow">
+		<http:listener doc:name="POST /orquestacion/usuarios" config-ref="HTTP_Listener_Config"
+			path="/orquestacion/usuarios" allowedMethods="POST"/>
+
+		<!-- Guardar datos de registro -->
+		<set-variable value="#[payload]" doc:name="Guardar Registro Request" variableName="registroReq"/>
+
+		<!-- Paso 1: Comprobar si el NIF/NIE ya está registrado (GET /usuarios/{id}) -->
+		<http:request method="GET" doc:name="GET /usuarios/{id} (comprobar duplicado)" config-ref="HTTP_Request_REST_API" path="/usuarios/{id}">
+			<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.registroReq.nifnie }]]]></http:uri-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200,404"/>
+			</http:response-validator>
+		</http:request>
+		<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Comprobación NIF" variableName="statusNif"/>
+
+		<!-- Paso 2 (CHOICE): ¿El usuario ya existe? -->
+		<choice doc:name="¿Usuario ya Existe? (NIF/NIE duplicado)">
+
+			<!-- RAMA SÍ existe (200): notificar rechazo -->
+			<when expression="#[vars.statusNif == 200]">
+				<ee:transform doc:name="Notificar Rechazo (NIF/NIE duplicado)">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.registroReq.email],
+  "asunto":  "Registro rechazado",
+  "mensaje": "Ya existe un usuario registrado con el NIF/NIE proporcionado. Si ya tiene cuenta, utilice la opción de recuperación de credenciales.",
+  "tipo":    "ALERTA"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (NIF duplicado)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+			</when>
+
+			<!-- RAMA NO existe (404): continuar con validación de datos -->
+			<otherwise>
+
+				<!-- Paso 3: Validar formato de los datos del formulario (POST /validacion/usuarios) -->
+				<ee:transform doc:name="Preparar Payload Validación Usuario">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nifnie":    vars.registroReq.nifnie,
+  "nombre":    vars.registroReq.nombre,
+  "apellidos": vars.registroReq.apellidos,
+  "email":     vars.registroReq.email
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /validacion/usuarios" config-ref="HTTP_Request_REST_API" path="/validacion/usuarios">
+					<http:response-validator>
+						<http:success-status-code-validator values="200,422"/>
+					</http:response-validator>
+				</http:request>
+				<set-variable value="#[payload]" doc:name="Guardar Resultado Validación" variableName="validacionUsuario"/>
+				<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Validación" variableName="statusValidacion"/>
+
+				<!-- Paso 3b (CHOICE): ¿Datos válidos? -->
+				<choice doc:name="¿Datos Válidos?">
+
+					<!-- RAMA SÍ válidos: crear usuario, activar perfil, notificar bienvenida -->
+					<when expression="#[vars.statusValidacion == 200 and vars.validacionUsuario.valido == true]">
+
+						<!-- Paso 4: Crear usuario (POST /usuarios) -->
+						<ee:transform doc:name="Preparar Payload Creación Usuario">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "nifnie":    vars.registroReq.nifnie,
+  "nombre":    vars.registroReq.nombre,
+  "apellidos": vars.registroReq.apellidos,
+  "email":     vars.registroReq.email,
+  "telefono":  vars.registroReq.telefono,
+  "direccion": vars.registroReq.direccion
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /usuarios" config-ref="HTTP_Request_REST_API" path="/usuarios"/>
+
+						<!-- Paso 5: Activar perfil del demandante (PUT /usuarios/{id}) -->
+						<ee:transform doc:name="Preparar Activación Perfil">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "estado": "activo",
+  "tipo":   "DEMANDANTE"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="PUT" doc:name="PUT /usuarios/{id} (activar perfil)" config-ref="HTTP_Request_REST_API" path="/usuarios/{id}">
+							<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.registroReq.nifnie }]]]></http:uri-params>
+						</http:request>
+
+						<!-- Paso 5b: Crear contraseña inicial (SOAP: CrearContrasena) -->
+						<ee:transform doc:name="Mapear CrearContrasena SOAP">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns iden http://www.labora.gva.es/ServicioIdentidad/
+---
+{
+  iden#CrearContrasena: {
+    nifnie:    vars.registroReq.nifnie,
+    contrasena: vars.registroReq.password_inicial
+  }
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<wsc:consume doc:name="SOAP: CrearContrasena" config-ref="WSC_ServicioIdentidad" operation="CrearContrasena"/>
+
+						<!-- Paso 6: Notificar bienvenida al demandante -->
+						<ee:transform doc:name="Preparar Notificación Bienvenida">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.registroReq.email],
+  "asunto":  "Bienvenido al Sistema LABORA",
+  "mensaje": "Su registro se ha completado con éxito. Ya puede autenticarse utilizando sus credenciales asociadas al identificador: " ++ vars.registroReq.nifnie,
+  "tipo":    "ALERTA"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (bienvenida)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+					</when>
+
+					<!-- RAMA NO válidos: notificar rechazo por datos incorrectos -->
+					<otherwise>
+						<ee:transform doc:name="Notificar Rechazo (datos inválidos)">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.registroReq.email],
+  "asunto":  "Registro rechazado",
+  "mensaje": "Los datos introducidos no son correctos o están incompletos. Por favor, revise el formulario y vuelva a intentarlo.",
+  "tipo":    "ALERTA"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (datos inválidos)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+					</otherwise>
+
+				</choice>
+
+			</otherwise>
+
+		</choice>
+	</flow>
+
+
+	<!-- ══════════════════════════════════════════════════════════════
+	     PROCESO 5: GESTIÓN DE SUSCRIPCIONES A OFERTAS Y CURSOS
+	     Diagrama: Recibir datos → Validar identidad usuario
+	               → ¿La identidad es válida?
+	                 → No: Cancelar suscripción
+	                 → Sí: Validar etiquetas suscripción
+	                       → ¿Las etiquetas son válidas?
+	                         → No: Cancelar suscripción
+	                         → Sí: Actualizar suscripciones a etiquetas
+	                               → Notificar al usuario → Suscripción finalizada
+	     ══════════════════════════════════════════════════════════════ -->
+
+	<flow name="Orquestacion_GestionSuscripcionesFlow">
+		<http:listener doc:name="POST /orquestacion/suscripciones" config-ref="HTTP_Listener_Config"
+			path="/orquestacion/suscripciones" allowedMethods="POST"/>
+
+		<!-- Guardar datos de la petición -->
+		<set-variable value="#[payload]" doc:name="Guardar Suscripción Request" variableName="suscripcionReq"/>
+
+		<!-- Paso 1: Obtener datos del demandante para validar su identidad (GET /usuarios/{id}) -->
+		<http:request method="GET" doc:name="GET /usuarios/{id}" config-ref="HTTP_Request_REST_API" path="/usuarios/{id}">
+			<http:uri-params><![CDATA[#[output application/java --- { "id" : vars.suscripcionReq.usuario_id }]]]></http:uri-params>
+			<http:response-validator>
+				<http:success-status-code-validator values="200,404"/>
+			</http:response-validator>
+		</http:request>
+		<set-variable value="#[payload]" doc:name="Guardar Datos Usuario" variableName="usuarioActivo"/>
+		<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Usuario" variableName="statusUsuario"/>
+
+		<!-- Paso 2 (CHOICE): ¿La identidad es válida? (usuario existe y está activo) -->
+		<choice doc:name="¿Identidad Válida? (usuario activo)">
+
+			<!-- RAMA SÍ válida: validar etiquetas -->
+			<when expression="#[vars.statusUsuario == 200 and vars.usuarioActivo.estado == 'activo']">
+
+				<!-- Paso 3: Validar las etiquetas seleccionadas (POST /validacion/etiquetas) -->
+				<ee:transform doc:name="Preparar Validación Etiquetas">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "etiquetas": vars.suscripcionReq.etiquetas
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /validacion/etiquetas" config-ref="HTTP_Request_REST_API" path="/validacion/etiquetas">
+					<http:response-validator>
+						<http:success-status-code-validator values="200,422"/>
+					</http:response-validator>
+				</http:request>
+				<set-variable value="#[payload]" doc:name="Guardar Resultado Validación Etiquetas" variableName="validacionEtiquetas"/>
+				<set-variable value="#[attributes.statusCode]" doc:name="Guardar Status Validación Etiquetas" variableName="statusEtiquetas"/>
+
+				<!-- Paso 3b (CHOICE): ¿Las etiquetas son válidas? -->
+				<choice doc:name="¿Etiquetas Válidas?">
+
+					<!-- RAMA SÍ válidas: registrar suscripción y notificar -->
+					<when expression="#[vars.statusEtiquetas == 200 and vars.validacionEtiquetas.validas == true]">
+
+						<!-- Paso 4: Registrar la suscripción (POST /suscripciones) -->
+						<ee:transform doc:name="Preparar Alta Suscripción">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "usuario_id": vars.suscripcionReq.usuario_id,
+  "tipo":       vars.suscripcionReq.tipo_suscripcion,
+  "etiquetas":  vars.suscripcionReq.etiquetas
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /suscripciones" config-ref="HTTP_Request_REST_API" path="/suscripciones"/>
+
+						<!-- Paso 5: Notificar confirmación al demandante -->
+						<ee:transform doc:name="Preparar Notificación Confirmación Suscripción">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.usuarioActivo.email],
+  "asunto":  "Confirmación de Alta de Suscripción",
+  "mensaje": "Se ha activado su suscripción de tipo " ++ vars.suscripcionReq.tipo_suscripcion ++ " vinculada a las etiquetas seleccionadas.",
+  "tipo":    "SUSCRIPCION"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (confirmación suscripción)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+
+					</when>
+
+					<!-- RAMA NO etiquetas inválidas: cancelar suscripción -->
+					<otherwise>
+						<ee:transform doc:name="Notificar Cancelación (etiquetas inválidas)">
+							<ee:message>
+								<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.usuarioActivo.email],
+  "asunto":  "Suscripción cancelada",
+  "mensaje": "Las etiquetas seleccionadas no son válidas o no existen en el sistema. Por favor, revise su selección.",
+  "tipo":    "SUSCRIPCION"
+}]]></ee:set-payload>
+							</ee:message>
+						</ee:transform>
+						<http:request method="POST" doc:name="POST /notificaciones (etiquetas inválidas)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+					</otherwise>
+
+				</choice>
+
+			</when>
+
+			<!-- RAMA NO identidad inválida: cancelar suscripción -->
+			<otherwise>
+				<ee:transform doc:name="Notificar Cancelación (identidad inválida)">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "destinatarios": [vars.suscripcionReq.email_usuario],
+  "asunto":  "Suscripción cancelada",
+  "mensaje": "No ha sido posible procesar su solicitud de suscripción. El usuario no existe o no está activo en el sistema.",
+  "tipo":    "SUSCRIPCION"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<http:request method="POST" doc:name="POST /notificaciones (identidad inválida)" config-ref="HTTP_Request_REST_API" path="/notificaciones"/>
+			</otherwise>
+
+		</choice>
+	</flow>
+
+</mule>
