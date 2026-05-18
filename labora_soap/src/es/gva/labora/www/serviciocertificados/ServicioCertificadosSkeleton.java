@@ -10,6 +10,7 @@ public class ServicioCertificadosSkeleton {
 			Controlador.solicitarCertificado(solicitarCertificado);
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			res.setOk(false);
 			res.setMensaje(e.getMessage());
 		}
@@ -26,6 +27,7 @@ public class ServicioCertificadosSkeleton {
 			Controlador.marcarCertificado(marcarCertificado);
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			res.setOk(false);
 			res.setMensaje(e.getMessage());
 		}
@@ -42,6 +44,7 @@ public class ServicioCertificadosSkeleton {
 			res.setCertificados(Controlador.listarCertificados(listarCertificados));
 		}
 		catch (Exception e) {
+			e.printStackTrace();
 			res.setOk(false);
 			res.setMensaje(e.getMessage());
 		}

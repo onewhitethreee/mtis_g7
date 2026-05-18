@@ -136,7 +136,7 @@
 
   <wsdl:service name="ServicioMatching">
     <wsdl:port binding="tns:ServicioMatching" name="ServicioMatching">
-      <soap:address location="http://localhost:9098/ServicioMatching"/>
+      <soap:address location="http://localhost:8080/ServicioMatching"/>
     </wsdl:port>
   </wsdl:service>
 

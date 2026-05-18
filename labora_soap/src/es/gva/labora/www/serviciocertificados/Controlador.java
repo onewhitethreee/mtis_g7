@@ -5,8 +5,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Date;
 
 public class Controlador {
 	private static final String DRIVER   = "com.mysql.cj.jdbc.Driver";
@@ -38,7 +41,7 @@ public class Controlador {
 			PreparedStatement stmt = conn.prepareStatement(
 				"INSERT INTO certificado (nifnie, tipo, motivo, estado) "
 				+ "SELECT u.id_nie, ?, ?, 'PENDIENTE' "
-				+ "FROM usuarios u "
+				+ "FROM usuario u "
 				+ "WHERE u.id_nie = ? AND u.tipo = 'DEMANDANTE' AND u.activo = 1;"
 			);
 			stmt.setString(1, solicitarCertificado.getTipo());
@@ -71,12 +74,25 @@ public class Controlador {
 		try {
 			PreparedStatement update_stmt = conn.prepareStatement(
 				"UPDATE certificado "
-				+ "SET estado = ?, observaciones = ? "
+				+ "SET estado = ?, observaciones = ?, fecha_emision = ?, codigo_verificacion = ? "
 				+ "WHERE id = ?;"
 			);
 			update_stmt.setString(1, marcarCertificado.getEstado());
 			update_stmt.setString(2, marcarCertificado.getObservaciones());
-			update_stmt.setInt(3, marcarCertificado.getId());
+			update_stmt.setInt(5, marcarCertificado.getId());				
+		
+			if (marcarCertificado.getEstado().equals("RECHAZADO")) {
+				update_stmt.setNull(3, java.sql.Types.DATE);
+				update_stmt.setNull(4, java.sql.Types.VARCHAR);
+			}
+			else if (marcarCertificado.getEstado().equals("GENERADO")) {
+				update_stmt.setDate(3, new java.sql.Date(Instant.now().toEpochMilli()));
+				update_stmt.setString(4, java.util.UUID.randomUUID().toString());				
+			}
+			else {
+				System.out.println(marcarCertificado.getEstado());
+				throw new Exception("Estado inválido, debe ser GENERADO o RECHAZADO");
+			}
 				
 			int affected = update_stmt.executeUpdate();
 			if (affected == 0) {
@@ -105,7 +121,7 @@ public class Controlador {
 		try {
 			PreparedStatement stmt; 
 			
-			if (listarCertificados.getNifnie() == null) {
+			if (listarCertificados.getNifnie() != null) {
 				stmt = conn.prepareStatement("SELECT * FROM certificado WHERE nifnie = ?;");
 				stmt.setString(1, listarCertificados.getNifnie());		
 			}
@@ -113,9 +129,9 @@ public class Controlador {
 				stmt = conn.prepareStatement("SELECT * from certificado;");
 			}
 		
-			List<Certificado> list = new ArrayList<>();
-			
 			ResultSet result = stmt.executeQuery();
+			
+			List<Certificado> list = new ArrayList<>();
 			while (result.next()) {
 				Certificado certificado = new Certificado();
 				certificado.setId(result.getInt("id"));
@@ -123,9 +139,12 @@ public class Controlador {
 				certificado.setTipo(result.getString("tipo"));
 				certificado.setMotivo(result.getString("motivo"));
 				certificado.setEstado(result.getString("estado"));
-				certificado.setFecha_emision(result.getDate("fecha_emision").toString());
 				certificado.setCodigo_verificacion(result.getString("codigo_verificacion"));
 				certificado.setObservaciones(result.getString("observaciones"));
+				
+				if (result.getDate("fecha_emision") != null) {
+					certificado.setFecha_emision(result.getDate("fecha_emision").toString());	
+				}
 				
 				list.add(certificado);
 			}

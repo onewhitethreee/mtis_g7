@@ -195,7 +195,7 @@
 
   <wsdl:service name="ServicioCertificados">
     <wsdl:port binding="tns:ServicioCertificados" name="ServicioCertificados">
-      <soap:address location="http://localhost:9098/ServicioCertificados"/>
+      <soap:address location="http://localhost:8080/ServicioCertificados"/>
     </wsdl:port>
   </wsdl:service>
 

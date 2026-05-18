@@ -103,7 +103,7 @@ public class Controlador {
 		try {
 			PreparedStatement stmt = conn.prepareStatement(
 				"UPDATE usuario "
-				+ "SET contasena_hash = ? "
+				+ "SET contrasena_hash = ? "
 				+ "WHERE id_nie = ? "
 				+ "LIMIT 1;"
 			);

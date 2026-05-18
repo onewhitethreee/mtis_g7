@@ -159,7 +159,7 @@
 
   <wsdl:service name="ServicioIdentidad">
     <wsdl:port binding="tns:ServicioIdentidad" name="ServicioIdentidad">
-      <soap:address location="http://localhost:9098/ServicioIdentidad"/>
+      <soap:address location="http://localhost:8080/ServicioIdentidad"/>
     </wsdl:port>
   </wsdl:service>
 
