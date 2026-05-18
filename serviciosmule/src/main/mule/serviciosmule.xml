@@ -28,29 +28,32 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
     <http:request-connection host="localhost" port="3030"/>
   </http:request-config>
 
-  <!-- SOAP – ServicioMatching  →  puerto 8080 -->
-  <wsc:config name="WSC_ServicioMatching" doc:name="WSC ServicioMatching">
-    <wsc:connection wsdlLocation="ServicioMatching.wsdl"
-                    service="ServicioMatching"
-                    port="ServicioMatching"
-                    address="http://localhost:8080/ServicioMatching"/>
-  </wsc:config>
+<!-- ServicioMatching -->
+<wsc:config name="WSC_ServicioMatching" doc:name="WSC ServicioMatching">
+  <wsc:connection 
+    wsdlLocation="http://localhost:8080/labora_soap/services/ServicioMatching?wsdl"
+    service="ServicioMatching"
+    port="ServicioMatching"
+    address="http://localhost:8080/labora_soap/services/ServicioMatching"/>
+</wsc:config>
 
-  <!-- SOAP – ServicioIdentidad  →  puerto 8080 -->
-  <wsc:config name="WSC_ServicioIdentidad" doc:name="WSC ServicioIdentidad">
-    <wsc:connection wsdlLocation="ServicioIdentidad.wsdl"
-                    service="ServicioIdentidad"
-                    port="ServicioIdentidad"
-                    address="http://localhost:8080/ServicioIdentidad"/>
-  </wsc:config>
+ <!-- ServicioIdentidad -->
+<wsc:config name="WSC_ServicioIdentidad" doc:name="WSC ServicioIdentidad">
+  <wsc:connection 
+    wsdlLocation="http://localhost:8080/labora_soap/services/ServicioIdentidad?wsdl"
+    service="ServicioIdentidad"
+    port="ServicioIdentidad"
+    address="http://localhost:8080/labora_soap/services/ServicioIdentidad"/>
+</wsc:config>
 
-  <!-- SOAP – ServicioCertificados  →  puerto 8080 -->
-  <wsc:config name="WSC_ServicioCertificados" doc:name="WSC ServicioCertificados">
-    <wsc:connection wsdlLocation="ServicioCertificados.wsdl"
-                    service="ServicioCertificados"
-                    port="ServicioCertificados"
-                    address="http://localhost:8080/ServicioCertificados"/>
-  </wsc:config>
+<!-- ServicioCertificados -->
+<wsc:config name="WSC_ServicioCertificados" doc:name="WSC ServicioCertificados">
+  <wsc:connection 
+    wsdlLocation="http://localhost:8080/labora_soap/services/ServicioCertificados?wsdl"
+    service="ServicioCertificados"
+    port="ServicioCertificados"
+    address="http://localhost:8080/labora_soap/services/ServicioCertificados"/>
+</wsc:config>
 
 
   <!-- ══════════════════════════════════════════════════════════════
@@ -90,38 +93,11 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
     <set-variable variableName="datosEmpresa"  value="#[payload]"              doc:name="Guardar Datos Empresa"/>
     <set-variable variableName="statusEmpresa" value="#[attributes.statusCode]" doc:name="Guardar Status Empresa"/>
 
-    <!-- 2. POST /validacion/ofertas
-         Body:     { cif_empresa, titulo, descripcion, duracion_contrato }
-         Response: ValidacionResponse { valido: boolean, motivo: string }  -->
-    <ee:transform doc:name="Preparar Validación Oferta">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-{
-  "cif_empresa":       vars.ofertaOriginal.cif_empresa,
-  "titulo":            vars.ofertaOriginal.titulo,
-  "descripcion":       vars.ofertaOriginal.descripcion,
-  "duracion_contrato": vars.ofertaOriginal.duracion_contrato
-}]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
-    <http:request method="POST" doc:name="POST /validacion/ofertas"
-                  config-ref="HTTP_REST_API" path="/validacion/ofertas">
-      <http:response-validator>
-        <http:success-status-code-validator values="200,400"/>
-      </http:response-validator>
-    </http:request>
-    <set-variable variableName="validacionOferta"       value="#[payload]"              doc:name="Guardar Validación Oferta"/>
-    <set-variable variableName="statusValidacionOferta" value="#[attributes.statusCode]" doc:name="Guardar Status Validación Oferta"/>
-
     <!-- CHOICE: ¿Cumple requisitos? empresa.activo == true + validacionOferta.valido == true -->
     <choice doc:name="¿Cumple Requisitos?">
 
       <when expression="#[vars.statusEmpresa == 200
-                          and vars.datosEmpresa.activo == true
-                          and vars.statusValidacionOferta == 200
-                          and vars.validacionOferta.valido == true]">
+                          and (vars.datosEmpresa.activo == true or vars.datosEmpresa.activo == 1)]">
 
         <!-- 3. POST /ofertas
                Body:     OfertaInput { cif_empresa, titulo, descripcion, duracion_contrato, etiquetas[] }
@@ -143,7 +119,7 @@ output application/json
         <http:request method="POST" doc:name="POST /ofertas"
                       config-ref="HTTP_REST_API" path="/ofertas">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
         <!-- id es string, p.ej. "OFE-2026-001" -->
@@ -212,7 +188,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (demandantes)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
 
@@ -233,7 +209,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (empresa aprobación)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
 
@@ -257,7 +233,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (empresa rechazo)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
       </otherwise>
@@ -281,24 +257,26 @@ output application/json
                   doc:name="Guardar Candidatura Request"/>
 
     <!-- 1. SOAP AutenticarUsuario → { ok: boolean } -->
-    <ee:transform doc:name="Mapear AutenticarUsuario SOAP">
-      <ee:message>
-        <ee:set-payload><![CDATA[%dw 2.0
+<ee:transform doc:name="Mapear AutenticarUsuario SOAP">
+  <ee:message>
+    <ee:set-payload><![CDATA[%dw 2.0
 output application/xml
 ns iden http://www.labora.gva.es/ServicioIdentidad/
 ---
 {
   iden#AutenticarUsuario: {
-    nifnie:    vars.candidaturaReq.nifnie,
+    nifnie:     vars.candidaturaReq.nifnie,
     contrasena: vars.candidaturaReq.contrasena
   }
 }]]></ee:set-payload>
-      </ee:message>
-    </ee:transform>
+  </ee:message>
+</ee:transform>
+        
     <wsc:consume doc:name="SOAP: AutenticarUsuario"
                  config-ref="WSC_ServicioIdentidad"
                  operation="AutenticarUsuario"/>
-    <set-variable variableName="autenticado"
+                 
+ <set-variable variableName="autenticado"
                   value="#[payload.body.AutenticarUsuarioResponse.ok]"
                   doc:name="Guardar ok Autenticación"/>
 
@@ -327,7 +305,7 @@ ns iden http://www.labora.gva.es/ServicioIdentidad/
     <!-- CHOICE: ¿Autenticado y tiene rol DEMANDANTE? -->
     <choice doc:name="¿Autenticado y es Demandante?">
 
-      <when expression="#[vars.autenticado == true and vars.esDemandante == true]">
+<when expression="#[(vars.autenticado == true or vars.autenticado == 'true') and (vars.esDemandante == true or vars.esDemandante == 'true')]">
 
         <!-- 3. GET /usuarios/{id} -->
         <http:request method="GET" doc:name="GET /usuarios/{id}"
@@ -343,7 +321,7 @@ ns iden http://www.labora.gva.es/ServicioIdentidad/
         <!-- CHOICE: ¿Demandante activo? -->
         <choice doc:name="¿Demandante Activo? (activo)">
 
-          <when expression="#[vars.statusUsuario == 200 and vars.datosUsuario.activo == true]">
+          <when expression="#[vars.statusUsuario == 200 and (vars.datosUsuario.activo == true or vars.datosUsuario.activo == 1)]">
 
             <!-- 4. GET /ofertas/{id} -->
             <http:request method="GET" doc:name="GET /ofertas/{id}"
@@ -397,7 +375,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /candidaturas"
                               config-ref="HTTP_REST_API" path="/candidaturas">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
 
@@ -418,7 +396,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /notificaciones (empresa)"
                               config-ref="HTTP_REST_API" path="/notificaciones">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
 
@@ -439,7 +417,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /notificaciones (demandante positivo)"
                               config-ref="HTTP_REST_API" path="/notificaciones">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
 
@@ -463,7 +441,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /notificaciones (no elegible)"
                               config-ref="HTTP_REST_API" path="/notificaciones">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
               </otherwise>
@@ -490,7 +468,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (demandante inactivo)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
           </otherwise>
@@ -501,8 +479,6 @@ output application/json
 
       <!-- No autenticado o no es DEMANDANTE -->
       <otherwise>
-        <logger level="INFO" doc:name="Log: Representante o auth fallida"
-                message="Usuario no autenticado o rol REPRESENTANTE. Sin candidatura."/>
         <ee:transform doc:name="Respuesta Sin Candidatura">
           <ee:message>
             <ee:set-payload><![CDATA[%dw 2.0
@@ -569,9 +545,9 @@ ns iden http://www.labora.gva.es/ServicioIdentidad/
     <!-- CHOICE: ¿Demandante activo? -->
     <choice doc:name="¿Demandante Activo? (activo)">
 
-      <when expression="#[vars.autenticado == true
-                          and vars.statusUsuario == 200
-                          and vars.datosUsuario.activo == true]">
+      <when expression="#[(vars.autenticado == true or vars.autenticado == 'true')
+                    and vars.statusUsuario == 200
+                    and (vars.datosUsuario.activo == true or vars.datosUsuario.activo == 1)]">
 
         <!-- 3. POST /validacion/certificados -->
         <ee:transform doc:name="Preparar Validación Tipo Certificado">
@@ -618,7 +594,7 @@ ns cer http://www.labora.gva.es/ServicioCertificados/
             </ee:transform>
             <wsc:consume doc:name="SOAP: SolicitarCertificado"
                          config-ref="WSC_ServicioCertificados"
-                         operation="SolicitarCertificado"/>
+                         operation="SolicitarCertificado"/>            
             <set-variable variableName="certOk"
                           value="#[payload.body.SolicitarCertificadoResponse.ok]"
                           doc:name="Guardar ok SolicitarCertificado"/>
@@ -626,28 +602,31 @@ ns cer http://www.labora.gva.es/ServicioCertificados/
             <!-- CHOICE: ¿Certificado generado? -->
             <choice doc:name="¿Certificado Generado? (certOk)">
 
-              <when expression="#[vars.certOk == true]">
+<when expression="#[vars.certOk == true or vars.certOk == 'true']">
 
                 <!-- 5. POST /certificados -->
                 <ee:transform doc:name="Preparar Registro Certificado REST">
-                  <ee:message>
-                    <ee:set-payload><![CDATA[%dw 2.0
+  <ee:message>
+    <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  "nifnie": vars.solicitudReq.nifnie,
-  "tipo":   vars.solicitudReq.tipo_certificado,
-  "motivo": vars.solicitudReq.motivo,
-  "estado": "GENERADO"
+  "id_nie":    vars.solicitudReq.nifnie,
+  "nombre":    vars.datosUsuario.nombre,
+  "apellidos": vars.datosUsuario.apellidos,
+  "email":     vars.datosUsuario.email,
+  "tipo":      vars.datosUsuario.tipo,
+  "activo":    true
 }]]></ee:set-payload>
-                  </ee:message>
-                </ee:transform>
-                <http:request method="POST" doc:name="POST /certificados"
-                              config-ref="HTTP_REST_API" path="/certificados">
-                  <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
-                  </http:response-validator>
-                </http:request>
+  </ee:message>
+</ee:transform>
+<http:request method="PUT" doc:name="PUT /usuarios/{id} (registrar certificado)"
+              config-ref="HTTP_REST_API" path="/usuarios/{id}">
+  <http:uri-params><![CDATA[#[output application/java --- { "id": vars.solicitudReq.nifnie }]]]></http:uri-params>
+  <http:response-validator>
+    <http:success-status-code-validator values="200,201"/>
+  </http:response-validator>
+</http:request>
 
                 <!-- 6. Notificar aprobación -->
                 <ee:transform doc:name="Notificar Aprobación Certificado">
@@ -666,7 +645,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /notificaciones (aprobación)"
                               config-ref="HTTP_REST_API" path="/notificaciones">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
 
@@ -690,7 +669,7 @@ output application/json
                 <http:request method="POST" doc:name="POST /notificaciones (error SOAP)"
                               config-ref="HTTP_REST_API" path="/notificaciones">
                   <http:response-validator>
-                    <http:success-status-code-validator values="201"/>
+                    <http:success-status-code-validator values="200,201"/>
                   </http:response-validator>
                 </http:request>
               </otherwise>
@@ -717,7 +696,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (tipo inválido)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
           </otherwise>
@@ -744,7 +723,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (inactivo/auth)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
       </otherwise>
@@ -799,7 +778,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (NIF duplicado)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
       </when>
@@ -836,25 +815,27 @@ output application/json
           <when expression="#[vars.statusValidacion == 200 and vars.validacionUsuario.valido == true]">
 
             <!-- 3. POST /usuarios → 201 -->
-            <ee:transform doc:name="Preparar Creación Usuario">
-              <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
+           <ee:transform doc:name="Preparar Creación Usuario">
+  <ee:message>
+    <ee:set-payload><![CDATA[%dw 2.0
 output application/json
 ---
 {
-  "id_nie":    vars.registroReq.id_nie,
-  "nombre":    vars.registroReq.nombre,
-  "apellidos": vars.registroReq.apellidos,
-  "email":     vars.registroReq.email,
-  "tipo":      "DEMANDANTE",
-  "activo":    false
+  "id_nie":     vars.registroReq.id_nie,
+  "nombre":     vars.registroReq.nombre,
+  "apellidos":  vars.registroReq.apellidos,
+  "email":      vars.registroReq.email,
+  "tipo":       "DEMANDANTE",
+  "activo":     false,
+  "contrasena": vars.registroReq.password_inicial
 }]]></ee:set-payload>
-              </ee:message>
-            </ee:transform>
+  </ee:message>
+</ee:transform>
+      
             <http:request method="POST" doc:name="POST /usuarios"
                           config-ref="HTTP_REST_API" path="/usuarios">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
 
@@ -914,7 +895,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (bienvenida)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
 
@@ -938,7 +919,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (datos inválidos)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
           </otherwise>
@@ -979,7 +960,7 @@ output application/json
     <!-- CHOICE: ¿Identidad válida? -->
     <choice doc:name="¿Identidad Válida? (activo)">
 
-      <when expression="#[vars.statusUsuario == 200 and vars.datosUsuario.activo == true]">
+<when expression="#[vars.statusUsuario == 200 and (vars.datosUsuario.activo == true or vars.datosUsuario.activo == 1)]">
 
         <!-- 2. POST /validacion/etiquetas -->
         <ee:transform doc:name="Preparar Validación Etiquetas">
@@ -1022,7 +1003,7 @@ output application/json
             <http:request method="POST" doc:name="POST /suscripciones"
                           config-ref="HTTP_REST_API" path="/suscripciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
 
@@ -1043,7 +1024,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (confirmación)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
 
@@ -1067,7 +1048,7 @@ output application/json
             <http:request method="POST" doc:name="POST /notificaciones (etiquetas inválidas)"
                           config-ref="HTTP_REST_API" path="/notificaciones">
               <http:response-validator>
-                <http:success-status-code-validator values="201"/>
+                <http:success-status-code-validator values="200,201"/>
               </http:response-validator>
             </http:request>
           </otherwise>
@@ -1094,7 +1075,7 @@ output application/json
         <http:request method="POST" doc:name="POST /notificaciones (identidad inválida)"
                       config-ref="HTTP_REST_API" path="/notificaciones">
           <http:response-validator>
-            <http:success-status-code-validator values="201"/>
+            <http:success-status-code-validator values="200,201"/>
           </http:response-validator>
         </http:request>
       </otherwise>

@@ -1,9 +1,0 @@
-DB_HOST=127.0.0.1
-DB_USER=root
-DB_PASSWORD=root
-DB_PORT=3307
-DB_NAME=labora
-
-MAIL_HOST=127.0.0.1
-MAIL_PORT=2525
-MAIL_FROM=labora@labora.gva.es

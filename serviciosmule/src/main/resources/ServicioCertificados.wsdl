@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions
+  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+  xmlns:tns="http://www.labora.gva.es/ServicioCertificados/"
+  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  name="ServicioCertificados"
+  targetNamespace="http://www.labora.gva.es/ServicioCertificados/">
+
+  <!-- ═══════════════════════════════════════════════════════
+       TIPOS
+       Operaciones:
+         - SolicitarCertificado → Flujo 3: genera el certificado vía SOAP
+         - MarcarCertificado    → Flujo 3: un administrador acepta o rechaza
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:types>
+    <xsd:schema targetNamespace="http://www.labora.gva.es/ServicioCertificados/">
+
+      <!-- ── Tipo complejo Certificado ── -->
+      <xsd:complexType name="Certificado">
+        <xsd:sequence>
+        	<xsd:element name="id" type="xsd:int" minOccurs="0"
+        		maxOccurs="1" />
+        	<xsd:element name="nifnie" type="xsd:string" minOccurs="1"
+        		maxOccurs="1" />
+        	<xsd:element name="tipo" type="xsd:string" minOccurs="1"
+        		maxOccurs="1" />
+        	<xsd:element name="motivo" type="xsd:string" maxOccurs="1"
+        		minOccurs="0">
+        	</xsd:element>
+        	<xsd:element name="estado" type="xsd:string" minOccurs="1"
+        		maxOccurs="1" />
+                    <xsd:element name="observaciones" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+                    <xsd:element name="fecha_emision" type="xsd:string"
+        		minOccurs="0" maxOccurs="1" />
+        	<xsd:element name="codigo_verificacion" type="xsd:string"
+        		minOccurs="0" maxOccurs="1" />
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <!-- ── SolicitarCertificado ── -->
+      <xsd:element name="SolicitarCertificado">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="nifnie"  type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="tipo"   type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="motivo" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="SolicitarCertificadoResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok"           type="xsd:boolean"        minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mensaje"      type="xsd:string"          minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <!-- ── MarcarCertificado ── -->
+      <xsd:element name="MarcarCertificado">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="id"            type="xsd:int"    minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="estado"        type="xsd:string" minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="observaciones" type="xsd:string" minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="MarcarCertificadoResponse">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="ok"          type="xsd:boolean"    minOccurs="1" maxOccurs="1"/>
+            <xsd:element name="mensaje"     type="xsd:string"      minOccurs="0" maxOccurs="1"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ListarCertificados">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="nifnie" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+      <xsd:element name="ListarCertificadosResponse">
+      	<xsd:complexType>
+      		<xsd:sequence>
+      			<xsd:element name="ok" type="xsd:boolean"></xsd:element>
+      			<xsd:element name="mensaje" type="xsd:string" maxOccurs="1" minOccurs="0"></xsd:element>
+      			<xsd:element name="certificados"
+      				type="tns:Certificado" maxOccurs="unbounded" minOccurs="0">
+      			</xsd:element>
+      		</xsd:sequence>
+      	</xsd:complexType>
+      </xsd:element>
+    </xsd:schema>
+  </wsdl:types>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MENSAJES
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:message name="SolicitarCertificadoRequest">
+    <wsdl:part name="parameters" element="tns:SolicitarCertificado"/>
+  </wsdl:message>
+  <wsdl:message name="SolicitarCertificadoResponse">
+    <wsdl:part name="parameters" element="tns:SolicitarCertificadoResponse"/>
+  </wsdl:message>
+
+  <wsdl:message name="MarcarCertificadoRequest">
+    <wsdl:part name="parameters" element="tns:MarcarCertificado"/>
+  </wsdl:message>
+  <wsdl:message name="MarcarCertificadoResponse">
+    <wsdl:part name="parameters" element="tns:MarcarCertificadoResponse"/>
+  </wsdl:message>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PORT TYPE
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:message name="ListarCertificadosRequest">
+  	<wsdl:part name="parameters" element="tns:ListarCertificados"></wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="ListarCertificadosResponse">
+  	<wsdl:part name="parameters" element="tns:ListarCertificadosResponse"></wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="ServicioCertificados">
+
+    <wsdl:operation name="SolicitarCertificado">
+      <wsdl:input  message="tns:SolicitarCertificadoRequest"/>
+      <wsdl:output message="tns:SolicitarCertificadoResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="MarcarCertificado">
+      <wsdl:input  message="tns:MarcarCertificadoRequest"/>
+      <wsdl:output message="tns:MarcarCertificadoResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="ListarCertificados">
+    	<wsdl:input message="tns:ListarCertificadosRequest"></wsdl:input>
+    	<wsdl:output message="tns:ListarCertificadosResponse"></wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BINDING
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:binding name="ServicioCertificados"
+  	type="tns:ServicioCertificados">
+  	<soap:binding style="document"
+  		transport="http://schemas.xmlsoap.org/soap/http" />
+
+  	<wsdl:operation name="SolicitarCertificado">
+  		<soap:operation
+  			soapAction="http://www.labora.gva.es/ServicioCertificados/SolicitarCertificado" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+
+  	<wsdl:operation name="MarcarCertificado">
+  		<soap:operation
+  			soapAction="http://www.labora.gva.es/ServicioCertificados/MarcarCertificado" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+
+  	<wsdl:operation name="ListarCertificados">
+  		<soap:operation
+  			soapAction="http://www.labora.gva.es/ServicioCertificados/ListarCertificados" />
+  		<wsdl:input>
+  			<soap:body use="literal" />
+  		</wsdl:input>
+  		<wsdl:output>
+  			<soap:body use="literal" />
+  		</wsdl:output>
+  	</wsdl:operation>
+  </wsdl:binding>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SERVICIO
+  ═══════════════════════════════════════════════════════ -->
+
+  <wsdl:service name="ServicioCertificados">
+    <wsdl:port binding="tns:ServicioCertificados" name="ServicioCertificados">
+      <soap:address location="http://localhost:8080/ServicioCertificados"/>
+    </wsdl:port>
+  </wsdl:service>
+
+</wsdl:definitions>
