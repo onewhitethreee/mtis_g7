@@ -28,28 +28,28 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
     <http:request-connection host="localhost" port="3030"/>
   </http:request-config>
 
-  <!-- SOAP – ServicioMatching  →  puerto 9098 -->
+  <!-- SOAP – ServicioMatching  →  puerto 8080 -->
   <wsc:config name="WSC_ServicioMatching" doc:name="WSC ServicioMatching">
     <wsc:connection wsdlLocation="ServicioMatching.wsdl"
                     service="ServicioMatching"
                     port="ServicioMatching"
-                    address="http://localhost:9098/ServicioMatching"/>
+                    address="http://localhost:8080/ServicioMatching"/>
   </wsc:config>
 
-  <!-- SOAP – ServicioIdentidad  →  puerto 9098 -->
+  <!-- SOAP – ServicioIdentidad  →  puerto 8080 -->
   <wsc:config name="WSC_ServicioIdentidad" doc:name="WSC ServicioIdentidad">
     <wsc:connection wsdlLocation="ServicioIdentidad.wsdl"
                     service="ServicioIdentidad"
                     port="ServicioIdentidad"
-                    address="http://localhost:9098/ServicioIdentidad"/>
+                    address="http://localhost:8080/ServicioIdentidad"/>
   </wsc:config>
 
-  <!-- SOAP – ServicioCertificados  →  puerto 9098 -->
+  <!-- SOAP – ServicioCertificados  →  puerto 8080 -->
   <wsc:config name="WSC_ServicioCertificados" doc:name="WSC ServicioCertificados">
     <wsc:connection wsdlLocation="ServicioCertificados.wsdl"
                     service="ServicioCertificados"
                     port="ServicioCertificados"
-                    address="http://localhost:9098/ServicioCertificados"/>
+                    address="http://localhost:8080/ServicioCertificados"/>
   </wsc:config>
 
 
