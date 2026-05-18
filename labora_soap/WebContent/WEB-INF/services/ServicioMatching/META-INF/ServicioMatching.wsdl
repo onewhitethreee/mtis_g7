@@ -19,8 +19,6 @@
         <xsd:complexType>
           <xsd:sequence>
             <xsd:element maxOccurs="1" minOccurs="1" name="id_oferta" type="xsd:string"/>
-            <xsd:element maxOccurs="1" minOccurs="0" name="max_candidatos" type="xsd:int"/>
-            <xsd:element maxOccurs="1" minOccurs="0" name="puntuacion_minima" type="xsd:decimal"/>
           </xsd:sequence>
         </xsd:complexType>
       </xsd:element>
@@ -108,7 +106,7 @@
   </wsdl:binding>
   <wsdl:service name="ServicioMatching">
     <wsdl:port name="ServicioMatching" binding="tns:ServicioMatching">
-      <soap:address location="http://localhost:9098/ServicioMatching"/>
+      <soap:address location="http://localhost:8080/ServicioMatching"/>
     </wsdl:port>
   </wsdl:service>
 </wsdl:definitions>

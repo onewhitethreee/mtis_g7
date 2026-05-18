@@ -55,93 +55,6 @@
                                }
                             
 
-                        /**
-                        * field for Max_candidatos
-                        */
-
-                        
-                                    protected int localMax_candidatos ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localMax_candidatosTracker = false ;
-
-                           public boolean isMax_candidatosSpecified(){
-                               return localMax_candidatosTracker;
-                           }
-
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return int
-                           */
-                           public  int getMax_candidatos(){
-                               return localMax_candidatos;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Max_candidatos
-                               */
-                               public void setMax_candidatos(int param){
-                            
-                                       // setting primitive attribute tracker to true
-                                       localMax_candidatosTracker =
-                                       param != java.lang.Integer.MIN_VALUE;
-                                   
-                                            this.localMax_candidatos=param;
-                                       
-
-                               }
-                            
-
-                        /**
-                        * field for Puntuacion_minima
-                        */
-
-                        
-                                    protected java.math.BigDecimal localPuntuacion_minima ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localPuntuacion_minimaTracker = false ;
-
-                           public boolean isPuntuacion_minimaSpecified(){
-                               return localPuntuacion_minimaTracker;
-                           }
-
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return java.math.BigDecimal
-                           */
-                           public  java.math.BigDecimal getPuntuacion_minima(){
-                               return localPuntuacion_minima;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Puntuacion_minima
-                               */
-                               public void setPuntuacion_minima(java.math.BigDecimal param){
-                            localPuntuacion_minimaTracker = param != null;
-                                   
-                                            this.localPuntuacion_minima=param;
-                                       
-
-                               }
-                            
-
      
      
         /**
@@ -218,38 +131,7 @@
                                           }
                                     
                                    xmlWriter.writeEndElement();
-                              if (localMax_candidatosTracker){
-                                    namespace = "";
-                                    writeStartElement(null, namespace, "max_candidatos", xmlWriter);
                              
-                                               if (localMax_candidatos==java.lang.Integer.MIN_VALUE) {
-                                           
-                                                         throw new org.apache.axis2.databinding.ADBException("max_candidatos cannot be null!!");
-                                                      
-                                               } else {
-                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMax_candidatos));
-                                               }
-                                    
-                                   xmlWriter.writeEndElement();
-                             } if (localPuntuacion_minimaTracker){
-                                    namespace = "";
-                                    writeStartElement(null, namespace, "puntuacion_minima", xmlWriter);
-                             
-
-                                          if (localPuntuacion_minima==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("puntuacion_minima cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPuntuacion_minima));
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             }
                     xmlWriter.writeEndElement();
                
 
@@ -443,22 +325,7 @@
                                         } else {
                                            throw new org.apache.axis2.databinding.ADBException("id_oferta cannot be null!!");
                                         }
-                                     if (localMax_candidatosTracker){
-                                      elementList.add(new javax.xml.namespace.QName("",
-                                                                      "max_candidatos"));
-                                 
-                                elementList.add(
-                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMax_candidatos));
-                            } if (localPuntuacion_minimaTracker){
-                                      elementList.add(new javax.xml.namespace.QName("",
-                                                                      "puntuacion_minima"));
-                                 
-                                        if (localPuntuacion_minima != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPuntuacion_minima));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("puntuacion_minima cannot be null!!");
-                                        }
-                                    }
+                                    
 
                 return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
             
@@ -558,57 +425,7 @@
                                     // A start element we are not expecting indicates an invalid parameter was passed
                                     throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getName());
                                 }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("","max_candidatos").equals(reader.getName())){
-                                
-                                    nillableValue = reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance","nil");
-                                    if ("true".equals(nillableValue) || "1".equals(nillableValue)){
-                                        throw new org.apache.axis2.databinding.ADBException("The element: "+"max_candidatos" +"  cannot be null");
-                                    }
-                                    
-
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setMax_candidatos(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToInt(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                               object.setMax_candidatos(java.lang.Integer.MIN_VALUE);
-                                           
-                                    }
-                                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("","puntuacion_minima").equals(reader.getName())){
-                                
-                                    nillableValue = reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance","nil");
-                                    if ("true".equals(nillableValue) || "1".equals(nillableValue)){
-                                        throw new org.apache.axis2.databinding.ADBException("The element: "+"puntuacion_minima" +"  cannot be null");
-                                    }
-                                    
-
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setPuntuacion_minima(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToDecimal(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                  
+                              
                             while (!reader.isStartElement() && !reader.isEndElement())
                                 reader.next();
                             

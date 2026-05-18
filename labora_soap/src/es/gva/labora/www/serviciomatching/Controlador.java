@@ -56,10 +56,9 @@ public class Controlador {
 			PreparedStatement stmt = conn.prepareStatement(
 				"SELECT m.nifnie, u.nombre, u.apellidos, u.email, m.puntuacion "
 				+ "FROM matching_resultado m "
+				+ "INNER JOIN usuario u ON m.nifnie = u.id_nie "
 				+ "WHERE m.id_oferta = ? "
-				+ "ORDER BY m.puntuacion DESC "
-				+ "INNER JOIN usuario u "
-				+ "ON m.nifnie = u.id_nie;"
+				+ "ORDER BY m.puntuacion DESC ;"
 			);
 			stmt.setString(1, obtenerCandidatos.getId_oferta());
 		
@@ -98,23 +97,18 @@ public class Controlador {
 		
 		try {
 			//
-			// No se puede hacer matching si la oferta no existe o no tiene ninguna etiqueta
+			// No se puede hacer matching si la oferta no existe
 			//
 			
-			PreparedStatement numero_etiquetas_stmt = conn.prepareStatement(
-				"SELECT COUNT(*) AS numero_etiquetas "
-				+ "FROM oferta_etiqueta "
-				+ "WHERE id_oferta = ?;"
+			PreparedStatement oferta_query_stmt = conn.prepareStatement(
+				"SELECT * FROM oferta WHERE id = ?;"
 			);
-			numero_etiquetas_stmt.setString(1, ejecutarMatching.getId_oferta());
+			oferta_query_stmt.setString(1, ejecutarMatching.getId_oferta());
 			
-			ResultSet numero_etiquetas_query = numero_etiquetas_stmt.executeQuery();
-			numero_etiquetas_query.next();
-			
-			int numero_etiquetas = numero_etiquetas_query.getInt("numero_etiquetas");
-			
-			if (numero_etiquetas == 0) {
-				throw new Exception("No existe tal oferta o la oferta no tiene ninguna etiqueta");
+			ResultSet oferta_query_result = oferta_query_stmt.executeQuery();
+
+			if (!oferta_query_result.next()) {
+				throw new Exception("No existe tal oferta");
 			}
 			
 			//
@@ -122,39 +116,28 @@ public class Controlador {
 			//
 			
 			PreparedStatement limpiar_datos_stmt = conn.prepareStatement(
-				"DELETE FROM matching_resultado "
-				+ "WHERE id_oferta = ?;"
+				"DELETE FROM matching_resultado WHERE id_oferta = ?;"
 			);
 			limpiar_datos_stmt.setString(1, ejecutarMatching.getId_oferta());
 			
 			limpiar_datos_stmt.executeUpdate();
 			
 			//
-			// Esto asigna puntuaciones a cada candidato basado en el solapamiento entre
-			// las etiquetas de los certificados del candidato y las etiquetas de la oferta,
-			// y luego lo almacena en la tabla
+			// Esto asigna puntuaciones a cada candidato basado en el numero
+			// de certificados del candidato
 			//
 			
 			PreparedStatement matching_stmt = conn.prepareStatement(
 				"INSERT INTO matching_resultado (id_oferta, nifnie, puntuacion) "
-				+ "SELECT "
-					+ "?, "
-					+ " c.nifnie, "
-					+ " (COUNT(DISTINCT oe.id_etiqueta) / ?) * 100 AS puntuacion "
-				+ "FROM certificado c "
-					+ "INNER JOIN etiqueta e ON c.tipo = e.nombre "
-					+ "INNER JOIN oferta_etiqueta oe ON e.id = oe.id_etiqueta "
-					+ "INNER JOIN usuario u ON c.nifnie = u.id_nie "
-				+ "WHERE oe.id_oferta = ? "
-					+ "AND c.estado = 'GENERADO' "
-					+ "AND u.tipo = 'DEMANDANTE' "
+				+ "SELECT ?, u.id_nie, COUNT(c.id) AS puntuacion "
+				+ "FROM usuario u "
+				+ "INNER JOIN certificado c ON u.id_nie = c.nifnie "
+				+ "WHERE u.tipo = 'DEMANDANTE' "
 					+ "AND u.activo = 1 "
-				+ "GROUP BY c.nifnie;"
+					+ "AND c.estado = 'GENERADO' "
+				+ "GROUP BY u.id_nie;"
 			);
 			matching_stmt.setString(1, ejecutarMatching.getId_oferta());
-			matching_stmt.setInt(2, numero_etiquetas);
-			matching_stmt.setString(3, ejecutarMatching.getId_oferta());
-			
 			matching_stmt.executeUpdate();
 			
 			conn.commit();
@@ -166,6 +149,7 @@ public class Controlador {
 		}
 		finally {
 			try {
+				conn.setAutoCommit(true);
 				conn.close();
 			}
 			catch (SQLException e) {
