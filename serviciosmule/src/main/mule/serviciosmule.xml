@@ -168,8 +168,15 @@ ns mat http://www.labora.gva.es/ServicioMatching/
                      operation="ObtenerCandidatos"/>
         <!-- Extraer lista de emails de la respuesta SOAP -->
         <set-variable variableName="emailsCandidatos"
-                      value="#[payload.body.ObtenerCandidatosResponse.candidatos map $.email]"
-                      doc:name="Guardar Emails Candidatos"/>
+              value="#[
+                do {
+                  var candidatos = payload.body.ObtenerCandidatosResponse.candidatos
+                  ---
+                  if (candidatos is Array) candidatos map $.email
+                  else [candidatos.email]
+                }
+              ]"
+              doc:name="Guardar Emails Candidatos"/>
 
         <!-- 6. POST /notificaciones  → demandantes compatibles -->
         <ee:transform doc:name="Preparar Notificación Demandantes">
