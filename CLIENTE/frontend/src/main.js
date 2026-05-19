@@ -35,12 +35,64 @@ function mostrarLogin() {
 
   contenido.innerHTML = `
     <section class="card">
-      <h2>Acceso al sistema</h2>
-      <p>Selecciona un usuario de demostración para probar los flujos del proyecto.</p>
+      <h2>Flujos de integración SOA</h2>
+      <p>Sistema LABORA — integración REST + SOAP orquestada mediante MuleSoft.</p>
 
-      <div class="botones">
-        <button id="btnDemandante">Entrar como demandante</button>
-        <button id="btnRepresentante">Entrar como representante</button>
+      <div class="flujos">
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 1</span>
+            <span class="flujo-rol representante">Representante</span>
+          </div>
+          <strong>Publicar oferta de trabajo</strong>
+          <p>MuleSoft valida la empresa via REST, crea la oferta y envía notificación a los demandantes suscritos.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 2</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Aplicar a una oferta</strong>
+          <p>MuleSoft verifica la elegibilidad del demandante, registra la candidatura y notifica a la empresa.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 3</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Solicitar certificado</strong>
+          <p>MuleSoft valida el tipo de certificado, lo genera llamando al servicio SOAP y notifica al demandante.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 4</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Suscribirse a ofertas o cursos</strong>
+          <p>MuleSoft valida las etiquetas seleccionadas, registra la suscripción y confirma al demandante.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 5</span>
+            <span class="flujo-rol ambos">Ambos roles</span>
+          </div>
+          <strong>Consultar catálogo</strong>
+          <p>Consulta directa al servidor REST para listar ofertas activas y cursos de formación disponibles.</p>
+        </div>
+
+      </div>
+
+      <div class="acceso">
+        <p class="acceso-titulo">Selecciona un perfil para iniciar la demostración</p>
+        <div class="botones">
+          <button id="btnDemandante">Entrar como demandante</button>
+          <button id="btnRepresentante">Entrar como representante</button>
+        </div>
       </div>
 
       <div id="resultado"></div>
