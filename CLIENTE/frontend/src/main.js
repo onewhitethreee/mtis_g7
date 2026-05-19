@@ -1,4 +1,4 @@
-﻿import './style.css'
+import './style.css'
 import {
   loginDemo,
   listarOfertas,
@@ -7,7 +7,12 @@ import {
   solicitarCertificado,
   suscribirseOfertas,
   suscribirseCursos,
-  publicarOferta
+  publicarOferta,
+  listarMisCandidaturas,
+  listarMisSuscripciones,
+  cancelarSuscripcion,
+  listarOfertasEmpresa,
+  listarCandidaturasOferta
 } from './api.js'
 
 let usuarioActual = null
@@ -70,6 +75,8 @@ function mostrarMenu() {
     ? `
       <button id="btnVerOfertas">Ver ofertas</button>
       <button id="btnVerCursos">Ver cursos</button>
+      <button id="btnMisCandidaturas">Mis candidaturas</button>
+      <button id="btnMisSuscripciones">Mis suscripciones</button>
       <button id="btnCertificado">Solicitar certificado</button>
       <button id="btnSuscripcionOfertas">Suscribirse a ofertas</button>
       <button id="btnSuscripcionCursos">Suscribirse a cursos</button>
@@ -80,6 +87,7 @@ function mostrarMenu() {
     ? `
       <button id="btnVerOfertas">Ver ofertas</button>
       <button id="btnPublicarOferta">Publicar oferta</button>
+      <button id="btnCandidaturasEmpresa">Candidaturas recibidas</button>
     `
     : ''
 
@@ -105,10 +113,13 @@ function mostrarMenu() {
 
   activarSiExiste('#btnVerOfertas', mostrarOfertas)
   activarSiExiste('#btnVerCursos', mostrarCursos)
+  activarSiExiste('#btnMisCandidaturas', mostrarMisCandidaturas)
+  activarSiExiste('#btnMisSuscripciones', mostrarMisSuscripciones)
   activarSiExiste('#btnCertificado', mostrarFormularioCertificado)
   activarSiExiste('#btnSuscripcionOfertas', mostrarFormularioSuscripcionOfertas)
   activarSiExiste('#btnSuscripcionCursos', mostrarFormularioSuscripcionCursos)
   activarSiExiste('#btnPublicarOferta', mostrarFormularioPublicarOferta)
+  activarSiExiste('#btnCandidaturasEmpresa', mostrarOfertasEmpresa)
 
   document.querySelector('#btnSalir').addEventListener('click', () => {
     usuarioActual = null
@@ -137,18 +148,25 @@ async function mostrarOfertas() {
         ${ofertas.length === 0 ? '<p>No hay ofertas disponibles o el servicio REST no está iniciado.</p>' : ''}
         ${ofertas.map(oferta => {
           const id = oferta.id || oferta.id_oferta || oferta.idOferta
-          const titulo = oferta.titulo || oferta.nombre || 'Oferta sin título'
-          const empresa = oferta.empresa || oferta.nombre_empresa || oferta.cif_empresa || 'Empresa no indicada'
-          const ubicacion = oferta.ubicacion || oferta.localidad || 'Ubicación no indicada'
-          const sector = oferta.sector || oferta.etiquetas || oferta.categoria || 'Sin sector'
+          const titulo = oferta.titulo || 'Oferta sin título'
+          const empresa = oferta.cif_empresa || 'No indicada'
+          const descripcion = oferta.descripcion || 'Sin descripción'
+          const duracion = oferta.duracion_contrato || 'No indicado'
+          const etiquetas = Array.isArray(oferta.etiquetas)
+            ? oferta.etiquetas.join(', ')
+            : (oferta.etiquetas || 'Sin etiquetas')
+          const fecha = oferta.fecha_publicacion
+            ? `<p><strong>Publicado:</strong> ${oferta.fecha_publicacion}</p>`
+            : ''
 
           return `
             <div class="item">
               <h3>${titulo}</h3>
-              <p><strong>Empresa:</strong> ${empresa}</p>
-              <p><strong>Ubicación:</strong> ${ubicacion}</p>
-              <p><strong>Sector/Etiquetas:</strong> ${sector}</p>
-
+              <p><strong>Empresa (CIF):</strong> ${empresa}</p>
+              <p><strong>Descripción:</strong> ${descripcion}</p>
+              <p><strong>Contrato:</strong> ${duracion}</p>
+              <p><strong>Etiquetas:</strong> ${etiquetas}</p>
+              ${fecha}
               ${puedeAplicar
                 ? `<button class="btnAplicar" data-id="${id}">Aplicar</button>`
                 : ''
@@ -208,15 +226,25 @@ async function mostrarCursos() {
       <div class="lista">
         ${cursos.length === 0 ? '<p>No hay cursos disponibles o el servicio REST no está iniciado.</p>' : ''}
         ${cursos.map(curso => {
-          const nombre = curso.nombre || curso.titulo || 'Curso sin nombre'
-          const area = curso.area || curso.categoria || curso.etiquetas || 'Sin área'
-          const plazas = curso.plazas || curso.plazas_disponibles || 'No indicado'
+          const titulo = curso.titulo || 'Curso sin nombre'
+          const descripcion = curso.descripcion || 'Sin descripción'
+          const fechaInicio = curso.fecha_inicio || 'No indicada'
+          const fechaFin = curso.fecha_fin || 'No indicada'
+          const etiquetas = Array.isArray(curso.etiquetas)
+            ? curso.etiquetas.join(', ')
+            : (curso.etiquetas || 'Sin etiquetas')
+          const estado = curso.estado
+            ? `<p><strong>Estado:</strong> ${curso.estado}</p>`
+            : ''
 
           return `
             <div class="item">
-              <h3>${nombre}</h3>
-              <p><strong>Área:</strong> ${area}</p>
-              <p><strong>Plazas:</strong> ${plazas}</p>
+              <h3>${titulo}</h3>
+              <p><strong>Descripción:</strong> ${descripcion}</p>
+              <p><strong>Inicio:</strong> ${fechaInicio}</p>
+              <p><strong>Fin:</strong> ${fechaFin}</p>
+              <p><strong>Etiquetas:</strong> ${etiquetas}</p>
+              ${estado}
             </div>
           `
         }).join('')}
@@ -231,6 +259,203 @@ async function mostrarCursos() {
   `
 
   document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+}
+
+async function mostrarMisCandidaturas() {
+  const contenido = document.querySelector('#contenido')
+  contenido.innerHTML = pantallaCargando('Cargando tus candidaturas...')
+
+  const candidaturas = await listarMisCandidaturas(usuarioActual.nifnie)
+
+  contenido.innerHTML = `
+    <section class="card">
+      <h2>Mis candidaturas</h2>
+
+      <div class="lista">
+        ${candidaturas.length === 0 ? '<p>No tienes candidaturas registradas.</p>' : ''}
+        ${candidaturas.map(c => {
+          const idOferta = c.id_oferta || '-'
+          const estado = c.estado || 'PENDIENTE'
+          const fecha = c.fecha_aplicacion
+            ? `<p><strong>Fecha:</strong> ${c.fecha_aplicacion}</p>`
+            : ''
+
+          return `
+            <div class="item">
+              <h3>Oferta: ${idOferta}</h3>
+              <p><strong>Estado:</strong> ${estado}</p>
+              ${fecha}
+            </div>
+          `
+        }).join('')}
+      </div>
+
+      <div class="botones">
+        <button id="btnVolver" class="secundario">Volver</button>
+      </div>
+    </section>
+  `
+
+  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+}
+
+async function mostrarMisSuscripciones() {
+  const contenido = document.querySelector('#contenido')
+  contenido.innerHTML = pantallaCargando('Cargando tus suscripciones...')
+
+  const suscripciones = await listarMisSuscripciones(usuarioActual.nifnie)
+
+  contenido.innerHTML = `
+    <section class="card">
+      <h2>Mis suscripciones</h2>
+
+      <div class="lista">
+        ${suscripciones.length === 0 ? '<p>No tienes suscripciones activas.</p>' : ''}
+        ${suscripciones.map(s => {
+          const tipo = s.tipo === 'OFERTA' ? 'Ofertas de trabajo' : 'Cursos de formación'
+          const etiquetas = Array.isArray(s.etiquetas)
+            ? s.etiquetas.join(', ')
+            : (s.etiquetas || '-')
+          const fecha = s.fecha_suscripcion
+            ? `<p><strong>Desde:</strong> ${s.fecha_suscripcion}</p>`
+            : ''
+
+          return `
+            <div class="item" id="sus-${s.id}">
+              <h3>${tipo}</h3>
+              <p><strong>Etiquetas:</strong> ${etiquetas}</p>
+              ${fecha}
+              <button class="btnCancelarSus secundario" data-id="${s.id}">Cancelar suscripción</button>
+            </div>
+          `
+        }).join('')}
+      </div>
+
+      <div class="botones">
+        <button id="btnVolver" class="secundario">Volver</button>
+      </div>
+
+      <div id="resultado"></div>
+    </section>
+  `
+
+  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+
+  document.querySelectorAll('.btnCancelarSus').forEach(boton => {
+    boton.addEventListener('click', async () => {
+      const id = boton.dataset.id
+      bloquearBoton(boton, 'Cancelando...')
+
+      const respuesta = await cancelarSuscripcion(id)
+
+      if (respuesta && respuesta.ok === false) {
+        mostrarError(respuesta.mensaje)
+        desbloquearBoton(boton, 'Cancelar suscripción')
+      } else {
+        const item = document.querySelector(`#sus-${id}`)
+        if (item) item.style.opacity = '0.5'
+        boton.disabled = true
+        boton.textContent = 'Cancelada'
+        mostrarOk('Suscripción cancelada', 'La suscripción ha sido eliminada correctamente.')
+      }
+    })
+  })
+}
+
+async function mostrarOfertasEmpresa() {
+  const contenido = document.querySelector('#contenido')
+  contenido.innerHTML = pantallaCargando('Cargando ofertas de tu empresa...')
+
+  const ofertas = await listarOfertasEmpresa(usuarioActual.cifEmpresa)
+
+  contenido.innerHTML = `
+    <section class="card">
+      <h2>Candidaturas recibidas</h2>
+      <p>Selecciona una oferta para ver sus candidatos.</p>
+
+      <div class="lista">
+        ${ofertas.length === 0
+          ? '<p>Tu empresa no tiene ofertas publicadas o el servicio REST no está iniciado.</p>'
+          : ''
+        }
+        ${ofertas.map(oferta => {
+          const id = oferta.id || oferta.id_oferta || oferta.idOferta
+          const titulo = oferta.titulo || 'Oferta sin título'
+          const estado = oferta.estado
+            ? `<p><strong>Estado:</strong> ${oferta.estado}</p>`
+            : ''
+
+          return `
+            <div class="item">
+              <h3>${titulo}</h3>
+              ${estado}
+              <button class="btnVerCandidaturas" data-id="${id}" data-titulo="${titulo}">Ver candidaturas</button>
+            </div>
+          `
+        }).join('')}
+      </div>
+
+      <div class="botones">
+        <button id="btnVolver" class="secundario">Volver</button>
+      </div>
+
+      <div id="resultado"></div>
+    </section>
+  `
+
+  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+
+  document.querySelectorAll('.btnVerCandidaturas').forEach(boton => {
+    boton.addEventListener('click', async () => {
+      const id = boton.dataset.id
+      const titulo = boton.dataset.titulo
+      if (!id || id === 'undefined') {
+        mostrarError('La oferta no tiene ID válido.')
+        return
+      }
+      await mostrarCandidaturasDeOferta(id, titulo)
+    })
+  })
+}
+
+async function mostrarCandidaturasDeOferta(idOferta, tituloOferta) {
+  const contenido = document.querySelector('#contenido')
+  contenido.innerHTML = pantallaCargando('Cargando candidaturas...')
+
+  const candidaturas = await listarCandidaturasOferta(idOferta)
+
+  contenido.innerHTML = `
+    <section class="card">
+      <h2>Candidaturas: ${tituloOferta}</h2>
+
+      <div class="lista">
+        ${candidaturas.length === 0 ? '<p>No hay candidaturas para esta oferta.</p>' : ''}
+        ${candidaturas.map(c => {
+          const candidato = c.id_candidato || '-'
+          const estado = c.estado || 'PENDIENTE'
+          const fecha = c.fecha_aplicacion
+            ? `<p><strong>Fecha:</strong> ${c.fecha_aplicacion}</p>`
+            : ''
+
+          return `
+            <div class="item">
+              <h3>Candidato: ${candidato}</h3>
+              <p><strong>Estado:</strong> ${estado}</p>
+              ${fecha}
+            </div>
+          `
+        }).join('')}
+      </div>
+
+      <div class="botones">
+        <button id="btnVolverOfertas" class="secundario">Ver otras ofertas</button>
+        <button id="btnVolverMenu" class="secundario">Volver al menú</button>
+      </div>
+    </section>
+  `
+
+  document.querySelector('#btnVolverOfertas').addEventListener('click', mostrarOfertasEmpresa)
+  document.querySelector('#btnVolverMenu').addEventListener('click', mostrarMenu)
 }
 
 function mostrarFormularioCertificado() {
@@ -380,7 +605,12 @@ function mostrarFormularioPublicarOferta() {
       <textarea id="descripcionOferta">Oferta de trabajo para incorporación inmediata.</textarea>
 
       <label>Duración del contrato</label>
-      <input id="duracionContrato" type="text" value="6 meses">
+      <select id="duracionContrato">
+        <option value="INDEFINIDO">Indefinido</option>
+        <option value="TEMPORAL">Temporal</option>
+        <option value="ALTERNANCIA">Alternancia</option>
+        <option value="PRACTICAS">Prácticas</option>
+      </select>
 
       <p class="subtitulo">Etiquetas</p>
       ${crearCheckboxEtiqueta('informatica', 'Informática')}
@@ -412,11 +642,6 @@ function mostrarFormularioPublicarOferta() {
       return
     }
 
-    if (campoVacio('#duracionContrato')) {
-      mostrarError('La duración del contrato es obligatoria.')
-      return
-    }
-
     const etiquetas = Array.from(document.querySelectorAll('.etiqueta:checked'))
       .map(check => check.value)
 
@@ -428,7 +653,7 @@ function mostrarFormularioPublicarOferta() {
     const datos = {
       titulo: document.querySelector('#tituloOferta').value.trim(),
       descripcion: document.querySelector('#descripcionOferta').value.trim(),
-      duracionContrato: document.querySelector('#duracionContrato').value.trim(),
+      duracionContrato: document.querySelector('#duracionContrato').value,
       etiquetas
     }
 

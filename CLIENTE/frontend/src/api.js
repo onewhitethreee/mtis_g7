@@ -1,4 +1,4 @@
-﻿const DEMO_USERS = {
+const DEMO_USERS = {
   demandante: {
     nifnie: '12345678A',
     nombre: 'María García López',
@@ -140,6 +140,30 @@ export async function publicarOferta(datos, usuario) {
     ok: true,
     mensaje: 'Oferta enviada a MuleSoft para su publicación.'
   }
+}
+
+export async function listarMisCandidaturas(nifnie) {
+  const datos = await llamarApi(`/rest/candidaturas?id_candidato=${encodeURIComponent(nifnie)}`)
+  return normalizarLista(datos)
+}
+
+export async function listarMisSuscripciones(nifnie) {
+  const datos = await llamarApi(`/rest/suscripciones?id_usuario=${encodeURIComponent(nifnie)}`)
+  return normalizarLista(datos)
+}
+
+export async function cancelarSuscripcion(id) {
+  return await llamarApi(`/rest/suscripciones/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export async function listarOfertasEmpresa(cifEmpresa) {
+  const datos = await llamarApi(`/rest/ofertas?cif_empresa=${encodeURIComponent(cifEmpresa)}&s=50`)
+  return normalizarLista(datos)
+}
+
+export async function listarCandidaturasOferta(idOferta) {
+  const datos = await llamarApi(`/rest/candidaturas?id_oferta=${encodeURIComponent(idOferta)}`)
+  return normalizarLista(datos)
 }
 
 async function llamarApi(url, opciones = {}) {
