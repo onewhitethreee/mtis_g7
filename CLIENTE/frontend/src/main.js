@@ -1,4 +1,6 @@
 import './style.css'
+import { registrarRutas as registrarRutasREST } from './restPanel.js'
+import { en, ir, iniciar } from './router.js'
 import {
   loginDemo,
   listarOfertas,
@@ -16,6 +18,7 @@ import {
 } from './api.js'
 
 let usuarioActual = null
+let _ofertaParaCandidaturas = { id: null, titulo: null }
 
 document.querySelector('#app').innerHTML = `
   <div class="app">
@@ -28,19 +31,91 @@ document.querySelector('#app').innerHTML = `
   </div>
 `
 
-mostrarLogin()
+const protegido = fn => () => {
+  if (!usuarioActual) return ir('/')
+  fn()
+}
+
+en('/', mostrarLogin)
+en('/menu', protegido(mostrarMenu))
+en('/ofertas', protegido(mostrarOfertas))
+en('/cursos', protegido(mostrarCursos))
+en('/mis-candidaturas', protegido(mostrarMisCandidaturas))
+en('/mis-suscripciones', protegido(mostrarMisSuscripciones))
+en('/certificado', protegido(mostrarFormularioCertificado))
+en('/suscribir/ofertas', protegido(mostrarFormularioSuscripcionOfertas))
+en('/suscribir/cursos', protegido(mostrarFormularioSuscripcionCursos))
+en('/publicar-oferta', protegido(mostrarFormularioPublicarOferta))
+en('/candidaturas-empresa', protegido(mostrarOfertasEmpresa))
+en('/candidaturas-oferta', protegido(() => mostrarCandidaturasDeOferta(_ofertaParaCandidaturas.id, _ofertaParaCandidaturas.titulo)))
+
+registrarRutasREST(protegido)
+
+iniciar()
 
 function mostrarLogin() {
   const contenido = document.querySelector('#contenido')
 
   contenido.innerHTML = `
     <section class="card">
-      <h2>Acceso al sistema</h2>
-      <p>Selecciona un usuario de demostración para probar los flujos del proyecto.</p>
+      <h2>Flujos de integración SOA</h2>
+      <p>Sistema LABORA — integración REST + SOAP orquestada mediante MuleSoft.</p>
 
-      <div class="botones">
-        <button id="btnDemandante">Entrar como demandante</button>
-        <button id="btnRepresentante">Entrar como representante</button>
+      <div class="flujos">
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 1</span>
+            <span class="flujo-rol representante">Representante</span>
+          </div>
+          <strong>Publicar oferta de trabajo</strong>
+          <p>MuleSoft valida la empresa via REST, crea la oferta y envía notificación a los demandantes suscritos.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 2</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Aplicar a una oferta</strong>
+          <p>MuleSoft verifica la elegibilidad del demandante, registra la candidatura y notifica a la empresa.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 3</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Solicitar certificado</strong>
+          <p>MuleSoft valida el tipo de certificado, lo genera llamando al servicio SOAP y notifica al demandante.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 4</span>
+            <span class="flujo-rol demandante">Demandante</span>
+          </div>
+          <strong>Suscribirse a ofertas o cursos</strong>
+          <p>MuleSoft valida las etiquetas seleccionadas, registra la suscripción y confirma al demandante.</p>
+        </div>
+
+        <div class="flujo">
+          <div class="flujo-cabecera">
+            <span class="flujo-num">Flujo 5</span>
+            <span class="flujo-rol ambos">Ambos roles</span>
+          </div>
+          <strong>Consultar catálogo</strong>
+          <p>Consulta directa al servidor REST para listar ofertas activas y cursos de formación disponibles.</p>
+        </div>
+
+      </div>
+
+      <div class="acceso">
+        <p class="acceso-titulo">Selecciona un perfil para iniciar la demostración</p>
+        <div class="botones">
+          <button id="btnDemandante">Entrar como demandante</button>
+          <button id="btnRepresentante">Entrar como representante</button>
+        </div>
       </div>
 
       <div id="resultado"></div>
@@ -51,7 +126,7 @@ function mostrarLogin() {
     const respuesta = await loginDemo('demandante')
     if (respuesta.ok) {
       usuarioActual = respuesta.usuario
-      mostrarMenu()
+      ir('/menu')
     } else {
       mostrarError(respuesta.mensaje)
     }
@@ -61,7 +136,7 @@ function mostrarLogin() {
     const respuesta = await loginDemo('representante')
     if (respuesta.ok) {
       usuarioActual = respuesta.usuario
-      mostrarMenu()
+      ir('/menu')
     } else {
       mostrarError(respuesta.mensaje)
     }
@@ -104,6 +179,7 @@ function mostrarMenu() {
       <div class="botones">
         ${botonesDemandante}
         ${botonesRepresentante}
+        <button id="btnRestPanel">Servicios REST</button>
         <button id="btnSalir" class="secundario">Cerrar sesión</button>
       </div>
 
@@ -111,19 +187,20 @@ function mostrarMenu() {
     </section>
   `
 
-  activarSiExiste('#btnVerOfertas', mostrarOfertas)
-  activarSiExiste('#btnVerCursos', mostrarCursos)
-  activarSiExiste('#btnMisCandidaturas', mostrarMisCandidaturas)
-  activarSiExiste('#btnMisSuscripciones', mostrarMisSuscripciones)
-  activarSiExiste('#btnCertificado', mostrarFormularioCertificado)
-  activarSiExiste('#btnSuscripcionOfertas', mostrarFormularioSuscripcionOfertas)
-  activarSiExiste('#btnSuscripcionCursos', mostrarFormularioSuscripcionCursos)
-  activarSiExiste('#btnPublicarOferta', mostrarFormularioPublicarOferta)
-  activarSiExiste('#btnCandidaturasEmpresa', mostrarOfertasEmpresa)
+  activarSiExiste('#btnVerOfertas', () => ir('/ofertas'))
+  activarSiExiste('#btnVerCursos', () => ir('/cursos'))
+  activarSiExiste('#btnMisCandidaturas', () => ir('/mis-candidaturas'))
+  activarSiExiste('#btnMisSuscripciones', () => ir('/mis-suscripciones'))
+  activarSiExiste('#btnCertificado', () => ir('/certificado'))
+  activarSiExiste('#btnSuscripcionOfertas', () => ir('/suscribir/ofertas'))
+  activarSiExiste('#btnSuscripcionCursos', () => ir('/suscribir/cursos'))
+  activarSiExiste('#btnPublicarOferta', () => ir('/publicar-oferta'))
+  activarSiExiste('#btnCandidaturasEmpresa', () => ir('/candidaturas-empresa'))
+  activarSiExiste('#btnRestPanel', () => ir('/rest'))
 
   document.querySelector('#btnSalir').addEventListener('click', () => {
     usuarioActual = null
-    mostrarLogin()
+    ir('/')
   })
 }
 
@@ -184,7 +261,7 @@ async function mostrarOfertas() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   if (puedeAplicar) {
     document.querySelectorAll('.btnAplicar').forEach(boton => {
@@ -258,7 +335,7 @@ async function mostrarCursos() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 }
 
 async function mostrarMisCandidaturas() {
@@ -296,7 +373,7 @@ async function mostrarMisCandidaturas() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 }
 
 async function mostrarMisSuscripciones() {
@@ -339,7 +416,7 @@ async function mostrarMisSuscripciones() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   document.querySelectorAll('.btnCancelarSus').forEach(boton => {
     boton.addEventListener('click', async () => {
@@ -403,17 +480,18 @@ async function mostrarOfertasEmpresa() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   document.querySelectorAll('.btnVerCandidaturas').forEach(boton => {
-    boton.addEventListener('click', async () => {
+    boton.addEventListener('click', () => {
       const id = boton.dataset.id
       const titulo = boton.dataset.titulo
       if (!id || id === 'undefined') {
         mostrarError('La oferta no tiene ID válido.')
         return
       }
-      await mostrarCandidaturasDeOferta(id, titulo)
+      _ofertaParaCandidaturas = { id, titulo }
+      ir('/candidaturas-oferta')
     })
   })
 }
@@ -454,8 +532,8 @@ async function mostrarCandidaturasDeOferta(idOferta, tituloOferta) {
     </section>
   `
 
-  document.querySelector('#btnVolverOfertas').addEventListener('click', mostrarOfertasEmpresa)
-  document.querySelector('#btnVolverMenu').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolverOfertas').addEventListener('click', () => ir('/candidaturas-empresa'))
+  document.querySelector('#btnVolverMenu').addEventListener('click', () => ir('/menu'))
 }
 
 function mostrarFormularioCertificado() {
@@ -488,7 +566,7 @@ function mostrarFormularioCertificado() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   document.querySelector('#btnEnviarCertificado').addEventListener('click', async () => {
     const boton = document.querySelector('#btnEnviarCertificado')
@@ -564,7 +642,7 @@ function mostrarFormularioSuscripcion(titulo, descripcion, idBoton, funcionApi) 
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   document.querySelector(`#${idBoton}`).addEventListener('click', async () => {
     const boton = document.querySelector(`#${idBoton}`)
@@ -627,7 +705,7 @@ function mostrarFormularioPublicarOferta() {
     </section>
   `
 
-  document.querySelector('#btnVolver').addEventListener('click', mostrarMenu)
+  document.querySelector('#btnVolver').addEventListener('click', () => ir('/menu'))
 
   document.querySelector('#btnGuardarOferta').addEventListener('click', async () => {
     const boton = document.querySelector('#btnGuardarOferta')
